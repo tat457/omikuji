@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>開運・一年を占うおみくじ</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Shippori Mincho -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- HTML2Canvas for downloading images -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Shippori Mincho', serif;
+            background-color: #fcf8f2;
+            color: #2c2421;
+            background-image: radial-gradient(#e5d7c5 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .font-sans-jp {
+            font-family: 'Zen Maru Gothic', sans-serif;
+        }
+
+        /* 和風のカラーパレット */
+        .bg-vermilion { background-color: #c83737; }
+        .text-vermilion { color: #c83737; }
+        .border-vermilion { border-color: #c83737; }
+        
+        .bg-gold { background: linear-gradient(135deg, #d4af37, #f3e5ab, #aa7c11); }
+        .text-gold { color: #b8860b; }
+        
+        .shrine-red { background-color: #b32424; }
+
+        /* 和紙風テクスチャ */
+        .washi-paper {
+            background-color: #fbf9f3;
+            background-image: radial-gradient(#ece3ce 0.75px, transparent 0.75px);
+            background-size: 12px 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08), inset 0 0 100px rgba(212,175,55,0.05);
+        }
+
+        /* 筒を振るアニメーション */
+        @keyframes shake {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            15% { transform: translate(-8px, -15px) rotate(-12deg); }
+            30% { transform: translate(8px, -10px) rotate(12deg); }
+            45% { transform: translate(-10px, -20px) rotate(-18deg); }
+            60% { transform: translate(10px, -15px) rotate(15deg); }
+            75% { transform: translate(-5px, -25px) rotate(-10deg); }
+            90% { transform: translate(5px, -10px) rotate(8deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+
+        .animate-shake {
+            animation: shake 1.2s ease-in-out infinite;
+        }
+
+        /* おみくじ棒が出るアニメーション */
+        @keyframes stickPop {
+            0% { transform: translateY(0); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(-110px); opacity: 1; }
+        }
+
+        .animate-stick {
+            animation: stickPop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.27) forwards;
+        }
+
+        /* 和風の枠線 */
+        .japanese-border {
+            border: 3px double #c83737;
+            position: relative;
+        }
+
+        .japanese-border::before, .japanese-border::after {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border: 2px solid #c83737;
+        }
+        .japanese-border::before { top: 4px; left: 4px; border-right: none; border-bottom: none; }
+        .japanese-border::after { bottom: 4px; right: 4px; border-left: none; border-top: none; }
+
+        /* カスタムスクロールバー */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1e8dc;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c83737;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-between p-4 md:p-8">
+
+    <!-- ヘッダー -->
+    <header class="w-full max-w-2xl text-center my-4 relative">
+        <div class="inline-block border-y-2 border-vermilion py-2 px-8">
+            <h1 class="text-3xl md:text-4xl font-extrabold tracking-widest text-vermilion flex items-center justify-center gap-3">
+                <i class="fa-solid fa-torii-gate text-2xl"></i>
+                <span id="yearDisplay">2026年</span> 運勢おみくじ
+                <i class="fa-solid fa-torii-gate text-2xl"></i>
+            </h1>
+        </div>
+        <p class="text-xs md:text-sm text-gray-600 mt-2 font-sans-jp tracking-wider">
+            心静かに願いを込め、今年一年の運勢を占いましょう
+        </p>
+
+        <!-- サウンド切り替えボタン -->
+        <button id="soundToggleBtn" onclick="toggleSound()" class="absolute right-0 top-1/2 -translate-y-1/2 p-2 rounded-full bg-amber-100 text-amber-800 hover:bg-amber-200 transition shadow" title="効果音ON/OFF">
+            <i id="soundIcon" class="fa-solid fa-volume-high"></i>
+        </button>
+    </header>
+
+    <!-- メインコンテンツエリア -->
+    <main class="w-full max-w-2xl flex-grow flex flex-col items-center justify-center relative my-4">
+
+        <!-- SCREEN 1: おみくじを引く画面 -->
+        <div id="drawScreen" class="w-full flex flex-col items-center text-center space-y-6">
+            
+            <!-- 名前入力＆年選択オプション -->
+            <div class="bg-white/80 backdrop-blur border border-amber-200 rounded-xl p-4 w-full max-w-md shadow-sm font-sans-jp text-sm space-y-3">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="sm:col-span-1 text-left">
+                        <label for="targetYear" class="block font-bold text-gray-700 mb-1">占う年</label>
+                        <div class="flex items-center">
+                            <input type="number" id="targetYear" min="1900" max="2100" class="w-full px-2 py-2 border border-amber-300 rounded-lg text-center font-bold text-amber-900 focus:outline-none focus:ring-2 focus:ring-red-400">
+                            <span class="ml-1 font-bold text-gray-700 shrink-0">年</span>
+                        </div>
+                    </div>
+                    <div class="sm:col-span-2 text-left">
+                        <label for="userName" class="block font-bold text-gray-700 mb-1">お名前 (任意)</label>
+                        <input type="text" id="userName" placeholder="例: ヤマガタ 太郎" class="w-full px-3 py-2 border border-amber-300 rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-red-400">
+                    </div>
+                </div>
+            </div>
+
+            <!-- おみくじ筒のグラフィックエリア -->
+            <div class="relative my-8 h-72 w-48 flex items-center justify-center">
+                
+                <!-- おみくじ棒 (飛び出る用) -->
+                <div id="omikujiStick" class="hidden absolute top-4 w-4 h-44 bg-amber-200 border-2 border-amber-700 rounded-t-md flex flex-col items-center justify-start pt-2 shadow-md z-0">
+                    <span id="stickNumber" class="text-xs font-bold text-amber-900 writing-mode-vertical">一番</span>
+                </div>
+
+                <!-- おみくじ筒 -->
+                <div id="omikujiCylinder" class="relative z-10 w-36 h-60 bg-gradient-to-r from-amber-800 via-amber-700 to-amber-900 rounded-xl border-4 border-amber-950 shadow-2xl flex flex-col items-center justify-between py-4 cursor-pointer hover:scale-105 transition-transform" onclick="startDraw()">
+                    <!-- 六角形の目印ライン -->
+                    <div class="w-full h-2 bg-amber-950"></div>
+                    <div class="w-20 h-20 rounded-full border-4 border-amber-500/40 flex items-center justify-center bg-amber-950/40">
+                        <span class="text-2xl font-bold text-amber-200 writing-mode-vertical tracking-widest">御神籤</span>
+                    </div>
+                    <div class="w-full h-2 bg-amber-950"></div>
+                </div>
+            </div>
+
+            <!-- 操作ボタン -->
+            <div class="space-y-3 w-full max-w-xs">
+                <button id="drawBtn" onclick="startDraw()" class="w-full py-4 bg-vermilion hover:bg-red-700 text-white font-bold rounded-full shadow-lg text-xl tracking-widest transform transition active:scale-95 flex items-center justify-center gap-2 border-2 border-amber-300">
+                    <i class="fa-solid fa-hands-praying"></i>
+                    おみくじを振る
+                </button>
+                <button onclick="showHistory()" class="w-full py-2 bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold rounded-full shadow-sm text-sm font-sans-jp transition flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-clock-rotate-left"></i> 過去の運勢履歴
+                </button>
+            </div>
+        </div>
+
+        <!-- SCREEN 2: おみくじ結果表示画面 -->
+        <div id="resultScreen" class="hidden w-full flex flex-col items-center">
+            
+            <!-- 結果カード (画像キャプチャ対象) -->
+            <div id="omikujiCard" class="w-full washi-paper border-4 border-vermilion rounded-2xl p-6 md:p-8 relative overflow-hidden shadow-2xl mb-6">
+                
+                <!-- 背景模様の和風飾り -->
+                <div class="absolute -top-10 -right-10 text-red-100/40 text-9xl pointer-events-none select-none">
+                    <i class="fa-solid fa-stamp"></i>
+                </div>
+                <div class="absolute -bottom-10 -left-10 text-red-100/40 text-9xl pointer-events-none select-none">
+                    <i class="fa-solid fa-fan"></i>
+                </div>
+
+                <!-- ヘッダー情報 -->
+                <div class="text-center border-b-2 border-dashed border-amber-800/30 pb-4 mb-6">
+                    <p id="resultDate" class="text-xs text-amber-900 font-sans-jp mb-1">参拝記念</p>
+                    <p id="resultName" class="text-sm font-bold text-gray-700 font-sans-jp"></p>
+                    <h2 class="text-xl font-bold text-amber-950 tracking-widest mt-1"><span id="resultYearTitle"></span>運勢御神籤</h2>
+                </div>
+
+                <!-- 運勢メイン (大吉等) -->
+                <div class="flex flex-col items-center justify-center my-6">
+                    <span class="text-sm text-gray-500 tracking-widest mb-1">【 今年の運勢 】</span>
+                    <div id="fortuneBadge" class="text-5xl md:text-6xl font-extrabold text-vermilion tracking-widest my-2 py-2 px-6 border-y-4 border-vermilion bg-red-50/50">
+                        大吉
+                    </div>
+                    <p id="fortunePoem" class="text-sm text-amber-950 font-bold italic mt-4 text-center px-4 leading-relaxed">
+                        「雲の上の 澄み渡る空 眺むれば 心晴れやかに 望み叶わん」
+                    </p>
+                </div>
+
+                <!-- 運勢詳細グリッド -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-6 text-sm">
+                    <div class="bg-white/60 p-3 rounded-lg border border-amber-200">
+                        <span class="font-bold text-vermilion block mb-1"><i class="fa-solid fa-heart mr-1"></i> 願望・恋愛</span>
+                        <p id="itemLove" class="text-gray-800 font-sans-jp text-xs leading-relaxed">素直な気持ちを伝えれば、良縁に恵まれます。</p>
+                    </div>
+                    <div class="bg-white/60 p-3 rounded-lg border border-amber-200">
+                        <span class="font-bold text-amber-700 block mb-1"><i class="fa-solid fa-briefcase mr-1"></i> 仕事・学業</span>
+                        <p id="itemWork" class="text-gray-800 font-sans-jp text-xs leading-relaxed">努力が大きく実を結ぶ年。自信を持って挑みましょう。</p>
+                    </div>
+                    <div class="bg-white/60 p-3 rounded-lg border border-amber-200">
+                        <span class="font-bold text-emerald-700 block mb-1"><i class="fa-solid fa-coins mr-1"></i> 金運</span>
+                        <p id="itemMoney" class="text-gray-800 font-sans-jp text-xs leading-relaxed">堅実な貯蓄が幸運を呼びます。無駄遣いは禁物。</p>
+                    </div>
+                    <div class="bg-white/60 p-3 rounded-lg border border-amber-200">
+                        <span class="font-bold text-blue-700 block mb-1"><i class="fa-solid fa-notes-medical mr-1"></i> 健康</span>
+                        <p id="itemHealth" class="text-gray-800 font-sans-jp text-xs leading-relaxed">規則正しい生活で快調に過ごせます。適度な運動を。</p>
+                    </div>
+                </div>
+
+                <!-- ラッキー要素 -->
+                <div class="bg-amber-100/50 rounded-xl p-4 border border-amber-300/60 font-sans-jp text-xs space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-amber-900"><i class="fa-solid fa-palette mr-1"></i> ラッキーカラー:</span>
+                        <span id="luckyColor" class="font-bold text-gray-800">朱色</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-amber-900"><i class="fa-solid fa-gem mr-1"></i> ラッキーアイテム:</span>
+                        <span id="luckyItem" class="font-bold text-gray-800">和紙の手帳</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-amber-900"><i class="fa-solid fa-compass mr-1"></i> 恵方（吉方位）:</span>
+                        <span id="luckyDirection" class="font-bold text-gray-800">南南東</span>
+                    </div>
+                </div>
+
+                <!-- 季節ごとのアドバイス -->
+                <div class="mt-6 border-t border-amber-800/20 pt-4 font-sans-jp text-xs">
+                    <h3 class="font-bold text-center text-amber-950 mb-3"><i class="fa-solid fa-calendar-days mr-1"></i> 四季の開運バイオリズム</h3>
+                    <div class="grid grid-cols-4 gap-2 text-center">
+                        <div class="bg-pink-50 p-2 rounded border border-pink-200">
+                            <span class="block text-xs font-bold text-pink-700">春</span>
+                            <span id="seasonSpring" class="text-[10px] text-gray-700">新芽が出る</span>
+                        </div>
+                        <div class="bg-emerald-50 p-2 rounded border border-emerald-200">
+                            <span class="block text-xs font-bold text-emerald-700">夏</span>
+                            <span id="seasonSummer" class="text-[10px] text-gray-700">情熱全開</span>
+                        </div>
+                        <div class="bg-amber-50 p-2 rounded border border-amber-200">
+                            <span class="block text-xs font-bold text-amber-700">秋</span>
+                            <span id="seasonAutumn" class="text-[10px] text-gray-700">実りの時</span>
+                        </div>
+                        <div class="bg-blue-50 p-2 rounded border border-blue-200">
+                            <span class="block text-xs font-bold text-blue-700">冬</span>
+                            <span id="seasonWinter" class="text-[10px] text-gray-700">充電と準備</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 text-center text-[10px] text-gray-400 font-sans-jp">
+                    開運・一年を占うおみくじ Web App
+                </div>
+            </div>
+
+            <!-- アクションボタン群 -->
+            <div class="w-full flex flex-wrap gap-3 justify-center font-sans-jp text-sm">
+                <button onclick="shareTwitter()" class="flex-1 min-w-[140px] py-3 bg-sky-500 hover:bg-sky-600 text-white rounded-xl font-bold shadow transition flex items-center justify-center gap-2">
+                    <i class="fa-brands fa-x-twitter"></i> Xで結果を共有
+                </button>
+                <button onclick="downloadResultImage()" class="flex-1 min-w-[140px] py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-download"></i> 画像で保存
+                </button>
+                <button onclick="tieFortune()" class="flex-1 min-w-[140px] py-3 bg-amber-700 hover:bg-amber-800 text-white rounded-xl font-bold shadow transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-ribbon"></i> 境内に結んで結縁
+                </button>
+            </div>
+
+            <button onclick="resetDraw()" class="mt-4 py-2 px-6 text-amber-900 bg-amber-200/60 hover:bg-amber-200 rounded-full font-bold text-xs font-sans-jp transition">
+                <i class="fa-solid fa-rotate-right mr-1"></i> もう一度引く
+            </button>
+        </div>
+
+        <!-- モーダル: 過去の履歴 -->
+        <div id="historyModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl w-full max-w-lg p-6 shadow-2xl relative max-h-[80vh] flex flex-col font-sans-jp">
+                <button onclick="closeHistory()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <h3 class="text-xl font-bold text-amber-950 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-vermilion"></i> おみくじ過去の履歴
+                </h3>
+                <div id="historyList" class="flex-1 overflow-y-auto space-y-3 pr-2">
+                    <!-- 履歴アイテムがJSで挿入される -->
+                </div>
+                <div class="mt-4 pt-3 border-t flex justify-between items-center">
+                    <button onclick="clearHistory()" class="text-xs text-red-500 hover:underline">
+                        履歴をすべて削除
+                    </button>
+                    <button onclick="closeHistory()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-lg text-xs">
+                        閉じる
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- カスタム通知トースト -->
+        <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-gray-900/90 text-white px-6 py-3 rounded-full text-sm font-sans-jp shadow-xl opacity-0 transition-opacity duration-300 pointer-events-none z-50">
+            メッセージ
+        </div>
+
+    </main>
+
+    <!-- フッター -->
+    <footer class="w-full text-center text-xs text-gray-500 mt-6 font-sans-jp">
+        <p>© <span id="currentYear">2026</span> 吉祥開運おみくじ | Powered by GitHub Pages</p>
+    </footer>
+
+    <!-- JavaScript ロジック -->
+    <script>
+        // サウンド管理
+        let soundEnabled = true;
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        // 運勢データベース
+        const fortunes = [
+            {
+                type: "大吉",
+                poem: "「雲の上の 澄み渡る空 眺むれば 心晴れやかに 望み叶わん」",
+                love: "素晴らしい良縁に恵まれます。意中の人へ素直な想いを伝えましょう。",
+                work: "これまでの努力が大いに花開く年。主導権を持って行動して大成功。",
+                money: "金運最高潮。予想外の収入や思いがけない恩恵に授かるでしょう。",
+                health: "気力・体力ともに充実。新しいスポーツや健康法を始めるとさらに吉。",
+                spring: "好機到来", summer: "大飛躍", autumn: "実りの成果", winter: "飛躍の準備",
+                bgHex: "#c83737"
+            },
+            {
+                type: "中吉",
+                poem: "「風立ちて 芽吹く若草 伸びゆけば 恵みの雨に 感謝重ねん」",
+                love: "落ち着いた温かい関係が築けます。お互いを思いやる心が鍵。",
+                work: "順調にステップアップできる時。周囲との連携を大切にすることで吉。",
+                money: "計画的な運用で着実に資産が増えます。自己投資にも最適。",
+                health: "良好。無理をしすぎず、十分な睡眠と休養を心がけましょう。",
+                spring: "順調なスタート", summer: "成長のとき", autumn: "穏やかな収穫", winter: "次への備え",
+                bgHex: "#d4af37"
+            },
+            {
+                type: "小吉",
+                poem: "「焦らずに 一歩一歩を 踏みしめよ 小さな喜び やがて大きな福」",
+                love: "焦りは禁物。少しずつ距離を縮めることで良い関係が育ちます。",
+                work: "地道な作業に幸運のヒントあり。基礎固めに最適な一年です。",
+                money: "収支のバランスが安定。無駄遣いを控えれば蓄えができます。",
+                health: "大きなトラブルはありませんが、暴飲暴食には気をつけて。",
+                spring: "地道な準備", summer: "着実な前進", autumn: "小さな喜び", winter: "心の安定",
+                bgHex: "#2b8a3e"
+            },
+            {
+                type: "吉",
+                poem: "「日々に感謝 誠の心 忘れねば 天の助けを受け 途はひらく」",
+                love: "自然体で接することで魅力が伝わります。友人からの紹介に良縁あり。",
+                work: "サポート役に回ることで信頼度急上昇。チームワークを重視して。",
+                money: "相応の収入が得られます。人のためにお金を使うと運気倍増。",
+                health: "適度な運動とバランスの取れた食生活で健康維持に期待。",
+                spring: "芽生えの時期", summer: "広がりを見せる", autumn: "成果の実感", winter: "安定の冬",
+                bgHex: "#1c7ed6"
+            },
+            {
+                type: "末吉",
+                poem: "「今はまだ 蕾なれども 冬越えて 花開く日を じっと待つべし」",
+                love: "相手のペースに合わせることが大切。焦らずじっくり関係を深めて。",
+                work: "後半に向けて運気が上昇。前半は学びと知識のインプットに専念。",
+                money: "節約を心がけると吉。大きな買い物は慎重に検討を。",
+                health: "疲れが溜まりやすい時期。お風呂にじっくり浸かってリフレッシュを。",
+                spring: "慎重に過ごす", summer: "光が見え始める", autumn: "徐々に上昇", winter: "大きな成果",
+                bgHex: "#e8590c"
+            },
+            {
+                type: "凶",
+                poem: "「荒波も 誠の心で 乗り越えん 災い転じて 福となす時」",
+                love: "勘違いや誤解に注意。言葉選びは慎重に、相手の意見を尊重して。",
+                work: "ミスを防ぐために二重チェックを。自己過信を捨て謙虚に過ごせば難を逃れます。",
+                money: "出費がかさみやすい年。財布の紐をしっかり締めて堅実に。",
+                health: "体調の変化に敏感になりましょう。違和感があれば早めの休息を。",
+                spring: "耐え忍ぶ時期", summer: "慎重に行動", autumn: "好転の兆し", winter: "福へ転換",
+                bgHex: "#495057"
+            }
+        ];
+
+        const luckyColors = ["朱色", "黄金色", "深緑", "瑠璃色", "桜色", "紫紺", "白銀", "琥珀色"];
+        const luckyItems = ["和紙の手帳", "お守りストラップ", "天然石のアクセサリー", "木製の櫛", "温かいお茶", "伝統工芸品", "水引飾り", "朱肉とハンコ"];
+        const directions = ["北北東", "東北東", "東南東", "南南東", "西南西", "西北西", "北北西"];
+
+        function playSound(type) {
+            if (!soundEnabled || !audioCtx) return;
+            try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'shake') {
+                    // ガラガラ音（低音の短いパルス）
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.1);
+                } else if (type === 'pop') {
+                    // ポンっ（棒が出る音）
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.2);
+                    gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.2);
+                } else if (type === 'fanfare') {
+                    // 雅な和風ファンファーレ
+                    const now = audioCtx.currentTime;
+                    const notes = [523.25, 659.25, 783.99, 1046.50]; // C, E, G, C
+                    notes.forEach((freq, idx) => {
+                        const o = audioCtx.createOscillator();
+                        const g = audioCtx.createGain();
+                        o.type = 'sine';
+                        o.frequency.setValueAtTime(freq, now + idx * 0.12);
+                        g.gain.setValueAtTime(0.2, now + idx * 0.12);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.6);
+                        o.connect(g);
+                        g.connect(audioCtx.destination);
+                        o.start(now + idx * 0.12);
+                        o.stop(now + idx * 0.12 + 0.6);
+                    });
+                }
+            } catch (e) {
+                console.log("Audio playback error:", e);
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById("soundIcon");
+            if (soundEnabled) {
+                icon.className = "fa-solid fa-volume-high";
+                showToast("効果音をONにしました");
+            } else {
+                icon.className = "fa-solid fa-volume-xmark";
+                showToast("効果音をOFFにしました");
+            }
+        }
+
+        let isDrawing = false;
+
+        function startDraw() {
+            if (isDrawing) return;
+            isDrawing = true;
+
+            const cylinder = document.getElementById("omikujiCylinder");
+            const stick = document.getElementById("omikujiStick");
+            const drawBtn = document.getElementById("drawBtn");
+
+            drawBtn.disabled = true;
+            drawBtn.classList.add("opacity-50");
+
+            // 音声コンテキストの初期化（ブラウザ制限対策）
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            // 振るアニメーション開始
+            cylinder.classList.add("animate-shake");
+
+            // ガラガラ効果音再生ループ
+            let shakeCount = 0;
+            const shakeInterval = setInterval(() => {
+                playSound('shake');
+                shakeCount++;
+                if (shakeCount >= 8) {
+                    clearInterval(shakeInterval);
+                }
+            }, 120);
+
+            // 1.5秒後に振るのを止め、棒を飛び出させる
+            setTimeout(() => {
+                cylinder.classList.remove("animate-shake");
+                playSound('pop');
+
+                // ランダムな棒の番号
+                const randomNum = Math.floor(Math.random() * 50) + 1;
+                document.getElementById("stickNumber").innerText = `第${randomNum}番`;
+
+                stick.classList.remove("hidden");
+                stick.classList.add("animate-stick");
+
+                // 1秒後に結果を表示
+                setTimeout(() => {
+                    displayResult();
+                    stick.classList.add("hidden");
+                    stick.classList.remove("animate-stick");
+                    drawBtn.disabled = false;
+                    drawBtn.classList.remove("opacity-50");
+                    isDrawing = false;
+                }, 1000);
+
+            }, 1200);
+        }
+
+        let currentResultData = null;
+
+        function displayResult() {
+            // 選択された年と名前を取得
+            const yearInput = document.getElementById("targetYear").value || new Date().getFullYear();
+            const nameInput = document.getElementById("userName").value.trim();
+            const displayName = nameInput ? `${nameInput} 様の` : "";
+
+            // ランダムなおみくじ結果の選定（確率調整：大吉20%, 中吉30%, 小吉20%, 吉15%, 末吉10%, 凶5%）
+            const rand = Math.random() * 100;
+            let fortuneIndex = 0;
+            if (rand < 20) fortuneIndex = 0;      // 大吉
+            else if (rand < 50) fortuneIndex = 1; // 中吉
+            else if (rand < 70) fortuneIndex = 2; // 小吉
+            else if (rand < 85) fortuneIndex = 3; // 吉
+            else if (rand < 95) fortuneIndex = 4; // 末吉
+            else fortuneIndex = 5;               // 凶
+
+            const selectedFortune = fortunes[fortuneIndex];
+
+            const randomColor = luckyColors[Math.floor(Math.random() * luckyColors.length)];
+            const randomItem = luckyItems[Math.floor(Math.random() * luckyItems.length)];
+            const randomDirection = directions[Math.floor(Math.random() * directions.length)];
+
+            // 日付設定
+            const now = new Date();
+            const dateStr = `${yearInput}年${now.getMonth() + 1}月${now.getDate()}日 参拝`;
+
+            // UI反映
+            document.getElementById("resultDate").innerText = dateStr;
+            document.getElementById("resultName").innerText = displayName;
+            document.getElementById("resultYearTitle").innerText = `${yearInput}年 `;
+            
+            const badge = document.getElementById("fortuneBadge");
+            badge.innerText = selectedFortune.type;
+            badge.style.color = selectedFortune.bgHex;
+            badge.style.borderColor = selectedFortune.bgHex;
+
+            document.getElementById("fortunePoem").innerText = selectedFortune.poem;
+            document.getElementById("itemLove").innerText = selectedFortune.love;
+            document.getElementById("itemWork").innerText = selectedFortune.work;
+            document.getElementById("itemMoney").innerText = selectedFortune.money;
+            document.getElementById("itemHealth").innerText = selectedFortune.health;
+
+            document.getElementById("luckyColor").innerText = randomColor;
+            document.getElementById("luckyItem").innerText = randomItem;
+            document.getElementById("luckyDirection").innerText = randomDirection;
+
+            document.getElementById("seasonSpring").innerText = selectedFortune.spring;
+            document.getElementById("seasonSummer").innerText = selectedFortune.summer;
+            document.getElementById("seasonAutumn").innerText = selectedFortune.autumn;
+            document.getElementById("seasonWinter").innerText = selectedFortune.winter;
+
+            // 画面切り替え
+            document.getElementById("drawScreen").classList.add("hidden");
+            document.getElementById("resultScreen").classList.remove("hidden");
+
+            // 音声＆Confetti演出
+            playSound('fanfare');
+            if (fortuneIndex <= 1) { // 大吉・中吉なら豪華紙吹雪
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: ['#d4af37', '#c83737', '#ffffff', '#ffc0cb']
+                });
+            }
+
+            // 履歴保存
+            currentResultData = {
+                year: yearInput,
+                date: dateStr,
+                name: nameInput || "匿名",
+                type: selectedFortune.type,
+                poem: selectedFortune.poem
+            };
+            saveToHistory(currentResultData);
+        }
+
+        function resetDraw() {
+            document.getElementById("resultScreen").classList.add("hidden");
+            document.getElementById("drawScreen").classList.remove("hidden");
+        }
+
+        function saveToHistory(result) {
+            let history = JSON.parse(localStorage.getItem("omikujiHistory") || "[]");
+            history.unshift(result);
+            if (history.length > 20) history.pop(); // 最大20件
+            localStorage.setItem("omikujiHistory", JSON.stringify(history));
+        }
+
+        function showHistory() {
+            const history = JSON.parse(localStorage.getItem("omikujiHistory") || "[]");
+            const listEl = document.getElementById("historyList");
+            listEl.innerHTML = "";
+
+            if (history.length === 0) {
+                listEl.innerHTML = `<p class="text-center text-gray-500 py-8 text-xs">まだおみくじの履歴がありません。</p>`;
+            } else {
+                history.forEach((item, index) => {
+                    const div = document.createElement("div");
+                    div.className = "bg-amber-50 p-3 rounded-lg border border-amber-200 flex justify-between items-center text-xs";
+                    div.innerHTML = `
+                        <div>
+                            <span class="font-bold text-amber-950">${item.date}</span>
+                            <span class="text-gray-600 ml-2">(${item.name})</span>
+                            <p class="text-gray-500 text-[10px] truncate max-w-[200px] mt-1">${item.poem}</p>
+                        </div>
+                        <span class="font-extrabold text-base px-3 py-1 rounded bg-white shadow-sm border ${item.type === '大吉' ? 'text-red-600 border-red-300' : 'text-amber-800 border-amber-300'}">
+                            ${item.type}
+                        </span>
+                    `;
+                    listEl.appendChild(div);
+                });
+            }
+
+            document.getElementById("historyModal").classList.remove("hidden");
+        }
+
+        function closeHistory() {
+            document.getElementById("historyModal").classList.add("hidden");
+        }
+
+        function clearHistory() {
+            if (confirm("おみくじの履歴をすべて削除してもよろしいですか？")) {
+                localStorage.removeItem("omikujiHistory");
+                showHistory();
+                showToast("履歴を削除しました");
+            }
+        }
+
+        function shareTwitter() {
+            if (!currentResultData) return;
+            const targetYear = currentResultData.year || new Date().getFullYear();
+            const text = `【${targetYear}年 運勢おみくじ】\n私の${targetYear}年の運勢は『${currentResultData.type}』でした！✨\n${currentResultData.poem}\n\n#一年おみくじ #開運 #おみくじ${targetYear}\n`;
+            const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`;
+            window.open(url, '_blank');
+        }
+
+        function downloadResultImage() {
+            const card = document.getElementById("omikujiCard");
+            showToast("画像を生成中...");
+            
+            html2canvas(card, {
+                scale: 2,
+                backgroundColor: "#fcf8f2",
+                useCORS: true
+            }).then(canvas => {
+                const image = canvas.toDataURL("image/png");
+                const link = document.createElement("a");
+                link.href = image;
+                link.download = `omikuji_result_${new Date().getTime()}.png`;
+                link.click();
+                showToast("画像を保存しました！");
+            }).catch(err => {
+                console.error(err);
+                showToast("画像の作成に失敗しました");
+            });
+        }
+
+        function tieFortune() {
+            playSound('pop');
+            confetti({
+                particleCount: 50,
+                angle: 90,
+                spread: 45,
+                origin: { y: 0.8 },
+                colors: ['#ffffff', '#f5f5f5', '#d4af37']
+            });
+            showToast("運勢を境内に強く結びつけました。ご加護がありますように。");
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById("toast");
+            toast.innerText = msg;
+            toast.classList.remove("opacity-0");
+            setTimeout(() => {
+                toast.classList.add("opacity-0");
+            }, 2500);
+        }
+
+        // 年度の動的初期化とイベントリスナー設定
+        window.addEventListener('DOMContentLoaded', () => {
+            const currentYear = new Date().getFullYear();
+            const targetYearInput = document.getElementById("targetYear");
+            
+            if (targetYearInput) {
+                targetYearInput.value = currentYear;
+                // 年数が入力・変更されたらリアルタイムでヘッダー表示を更新
+                targetYearInput.addEventListener("input", (e) => {
+                    const val = e.target.value;
+                    document.getElementById("yearDisplay").innerText = val ? `${val}年` : '';
+                });
+            }
+
+            document.getElementById("yearDisplay").innerText = `${currentYear}年`;
+            document.getElementById("currentYear").innerText = currentYear;
+        });
+    </script>
+</body>
+</html>
