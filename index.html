@@ -37,8 +37,6 @@
         
         .bg-gold { background: linear-gradient(135deg, #d4af37, #f3e5ab, #aa7c11); }
         .text-gold { color: #b8860b; }
-        
-        .shrine-red { background-color: #b32424; }
 
         /* 和紙風テクスチャ */
         .washi-paper {
@@ -75,21 +73,11 @@
             animation: stickPop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.27) forwards;
         }
 
-        /* 和風の枠線 */
-        .japanese-border {
-            border: 3px double #c83737;
-            position: relative;
+        /* 縦書き指定 */
+        .writing-mode-vertical {
+            writing-mode: vertical-rl;
+            text-orientation: upright;
         }
-
-        .japanese-border::before, .japanese-border::after {
-            content: '';
-            position: absolute;
-            width: 12px;
-            height: 12px;
-            border: 2px solid #c83737;
-        }
-        .japanese-border::before { top: 4px; left: 4px; border-right: none; border-bottom: none; }
-        .japanese-border::after { bottom: 4px; right: 4px; border-left: none; border-top: none; }
 
         /* カスタムスクロールバー */
         ::-webkit-scrollbar {
@@ -119,10 +107,15 @@
             心静かに願いを込め、今年一年の運勢を占いましょう
         </p>
 
-        <!-- サウンド切り替えボタン -->
-        <button id="soundToggleBtn" onclick="toggleSound()" class="absolute right-0 top-1/2 -translate-y-1/2 p-2 rounded-full bg-amber-100 text-amber-800 hover:bg-amber-200 transition shadow" title="効果音ON/OFF">
-            <i id="soundIcon" class="fa-solid fa-volume-high"></i>
-        </button>
+        <!-- サウンド＆確率設定ボタンエリア -->
+        <div class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2">
+            <button id="probabilityToggleBtn" onclick="toggleProbabilityModal()" class="p-2 rounded-full bg-amber-100 text-amber-900 hover:bg-amber-200 transition shadow text-sm" title="各種設定（確率・文言編集）">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+            <button id="soundToggleBtn" onclick="toggleSound()" class="p-2 rounded-full bg-amber-100 text-amber-800 hover:bg-amber-200 transition shadow text-sm" title="効果音ON/OFF">
+                <i id="soundIcon" class="fa-solid fa-volume-high"></i>
+            </button>
+        </div>
     </header>
 
     <!-- メインコンテンツエリア -->
@@ -153,12 +146,11 @@
                 
                 <!-- おみくじ棒 (飛び出る用) -->
                 <div id="omikujiStick" class="hidden absolute top-4 w-4 h-44 bg-amber-200 border-2 border-amber-700 rounded-t-md flex flex-col items-center justify-start pt-2 shadow-md z-0">
-                    <span id="stickNumber" class="text-xs font-bold text-amber-900 writing-mode-vertical">一番</span>
+                    <span id="stickNumber" class="text-xs font-bold text-amber-900 writing-mode-vertical">第一番</span>
                 </div>
 
                 <!-- おみくじ筒 -->
                 <div id="omikujiCylinder" class="relative z-10 w-36 h-60 bg-gradient-to-r from-amber-800 via-amber-700 to-amber-900 rounded-xl border-4 border-amber-950 shadow-2xl flex flex-col items-center justify-between py-4 cursor-pointer hover:scale-105 transition-transform" onclick="startDraw()">
-                    <!-- 六角形の目印ライン -->
                     <div class="w-full h-2 bg-amber-950"></div>
                     <div class="w-20 h-20 rounded-full border-4 border-amber-500/40 flex items-center justify-center bg-amber-950/40">
                         <span class="text-2xl font-bold text-amber-200 writing-mode-vertical tracking-widest">御神籤</span>
@@ -168,12 +160,12 @@
             </div>
 
             <!-- 操作ボタン -->
-            <div class="space-y-3 w-full max-w-xs">
+            <div class="space-y-3 w-full max-w-xs font-sans-jp">
                 <button id="drawBtn" onclick="startDraw()" class="w-full py-4 bg-vermilion hover:bg-red-700 text-white font-bold rounded-full shadow-lg text-xl tracking-widest transform transition active:scale-95 flex items-center justify-center gap-2 border-2 border-amber-300">
                     <i class="fa-solid fa-hands-praying"></i>
                     おみくじを振る
                 </button>
-                <button onclick="showHistory()" class="w-full py-2 bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold rounded-full shadow-sm text-sm font-sans-jp transition flex items-center justify-center gap-1">
+                <button onclick="showHistory()" class="w-full py-2 bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold rounded-full shadow-sm text-sm transition flex items-center justify-center gap-1">
                     <i class="fa-solid fa-clock-rotate-left"></i> 過去の運勢履歴
                 </button>
             </div>
@@ -198,6 +190,7 @@
                     <p id="resultDate" class="text-xs text-amber-900 font-sans-jp mb-1">参拝記念</p>
                     <p id="resultName" class="text-sm font-bold text-gray-700 font-sans-jp"></p>
                     <h2 class="text-xl font-bold text-amber-950 tracking-widest mt-1"><span id="resultYearTitle"></span>運勢御神籤</h2>
+                    <span id="resultStickNumber" class="inline-block mt-2 px-3 py-0.5 bg-amber-900 text-amber-100 text-xs font-bold rounded-full">第一番</span>
                 </div>
 
                 <!-- 運勢メイン (大吉等) -->
@@ -265,52 +258,184 @@
                         </div>
                         <div class="bg-blue-50 p-2 rounded border border-blue-200">
                             <span class="block text-xs font-bold text-blue-700">冬</span>
-                            <span id="seasonWinter" class="text-[10px] text-gray-700">充電と準備</span>
+                            <span id="seasonWinter" class="text-[10px] text-gray-700">次への備え</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="mt-6 text-center text-[10px] text-gray-400 font-sans-jp">
-                    開運・一年を占うおみくじ Web App
+            </div>
+
+            <!-- 結果画面の操作アクションボタン -->
+            <div class="w-full max-w-md space-y-3 font-sans-jp mb-6">
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="shareTwitter()" class="w-full py-2.5 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-xl shadow transition text-xs flex items-center justify-center gap-2">
+                        <i class="fa-brands fa-x-twitter text-base"></i> 結果をXでシェア
+                    </button>
+                    <button onclick="downloadResultImage()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow transition text-xs flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-download"></i> 画像として保存
+                    </button>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="tieFortune()" class="w-full py-2.5 bg-amber-800 hover:bg-amber-900 text-white font-bold rounded-xl shadow transition text-xs flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-ribbon"></i> 境内に結んで納める
+                    </button>
+                    <button onclick="resetDraw()" class="w-full py-2.5 bg-amber-200 hover:bg-amber-300 text-amber-900 font-bold rounded-xl shadow transition text-xs flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-rotate-right"></i> もう一度引く
+                    </button>
                 </div>
             </div>
 
-            <!-- アクションボタン群 -->
-            <div class="w-full flex flex-wrap gap-3 justify-center font-sans-jp text-sm">
-                <button onclick="shareTwitter()" class="flex-1 min-w-[140px] py-3 bg-sky-500 hover:bg-sky-600 text-white rounded-xl font-bold shadow transition flex items-center justify-center gap-2">
-                    <i class="fa-brands fa-x-twitter"></i> Xで結果を共有
-                </button>
-                <button onclick="downloadResultImage()" class="flex-1 min-w-[140px] py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow transition flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-download"></i> 画像で保存
-                </button>
-                <button onclick="tieFortune()" class="flex-1 min-w-[140px] py-3 bg-amber-700 hover:bg-amber-800 text-white rounded-xl font-bold shadow transition flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-ribbon"></i> 境内に結んで結縁
-                </button>
-            </div>
-
-            <button onclick="resetDraw()" class="mt-4 py-2 px-6 text-amber-900 bg-amber-200/60 hover:bg-amber-200 rounded-full font-bold text-xs font-sans-jp transition">
-                <i class="fa-solid fa-rotate-right mr-1"></i> もう一度引く
-            </button>
         </div>
 
-        <!-- モーダル: 過去の履歴 -->
+        <!-- モーダル: 確率＆文言設定 -->
+        <div id="probabilityModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl w-full max-w-lg p-6 shadow-2xl relative flex flex-col font-sans-jp max-h-[90vh]">
+                <button onclick="toggleProbabilityModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl z-10">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                
+                <!-- タブ切り替えヘッダー -->
+                <div class="flex border-b border-amber-200 mb-4 pb-1 gap-4">
+                    <button id="tabProbBtn" onclick="switchConfigTab('prob')" class="text-base font-bold pb-2 border-b-2 border-vermilion text-vermilion transition">
+                        <i class="fa-solid fa-sliders mr-1"></i> 出現確率設定
+                    </button>
+                    <button id="tabTextBtn" onclick="switchConfigTab('text')" class="text-base font-bold pb-2 border-b-2 border-transparent text-gray-500 hover:text-amber-900 transition">
+                        <i class="fa-solid fa-pen-to-square mr-1"></i> 文面編集
+                    </button>
+                </div>
+
+                <!-- TAB 1: 確率設定 -->
+                <div id="tabProbContent" class="flex-1 overflow-y-auto space-y-4 pr-1">
+                    <p class="text-xs text-gray-500">各運勢の出やすさ（%）を自由に調整できます</p>
+
+                    <!-- プリセットボタン -->
+                    <div class="flex flex-wrap gap-2 mb-2">
+                        <button onclick="setPreset('default')" class="px-2.5 py-1 text-xs bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold rounded">標準</button>
+                        <button onclick="setPreset('lucky')" class="px-2.5 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 font-bold rounded">大吉確定モード</button>
+                        <button onclick="setPreset('hard')" class="px-2.5 py-1 text-xs bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded">超辛口モード</button>
+                    </div>
+
+                    <!-- 確率スライダー群 -->
+                    <div id="probabilityInputs" class="space-y-3 text-xs">
+                        <!-- JSで動的生成 -->
+                    </div>
+
+                    <div class="pt-2 flex justify-between items-center text-xs border-t">
+                        <span class="font-bold text-gray-700">合計確率: </span>
+                        <span id="totalPercentDisplay" class="font-extrabold text-sm text-amber-900">100%</span>
+                    </div>
+                </div>
+
+                <!-- TAB 2: 文面編集 (パターン対応版) -->
+                <div id="tabTextContent" class="hidden flex-1 overflow-y-auto space-y-4 pr-1">
+                    <div class="flex justify-between items-center">
+                        <p class="text-xs text-gray-500">運勢ごとに複数の文言パターンを保存できます</p>
+                        <button onclick="requestResetFortunesText()" class="text-xs text-red-600 hover:underline flex items-center gap-1 font-bold">
+                            <i class="fa-solid fa-rotate-left"></i> 初期文面に戻す
+                        </button>
+                    </div>
+
+                    <!-- 運勢＆パターン選択エリア -->
+                    <div class="bg-amber-50 p-3 rounded-lg border border-amber-200 space-y-2">
+                        <div class="flex items-center gap-2">
+                            <label for="fortuneSelectEdit" class="text-xs font-bold text-gray-700 shrink-0">編集運勢:</label>
+                            <select id="fortuneSelectEdit" onchange="onFortuneSelectChange()" class="w-full text-xs p-1.5 border border-amber-300 rounded font-bold text-amber-950 bg-white">
+                                <!-- JSで生成 -->
+                            </select>
+                        </div>
+                        <div class="flex items-center justify-between gap-2 pt-1 border-t border-amber-200/60">
+                            <div class="flex items-center gap-2 flex-1">
+                                <label for="patternSelectEdit" class="text-xs font-bold text-gray-700 shrink-0">パターン:</label>
+                                <select id="patternSelectEdit" onchange="onPatternSelectChange()" class="w-full text-xs p-1.5 border border-amber-300 rounded font-bold text-gray-800 bg-white">
+                                    <!-- JSで生成 -->
+                                </select>
+                            </div>
+                            <div class="flex gap-1 shrink-0">
+                                <button onclick="addNewPattern()" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded flex items-center gap-1">
+                                    <i class="fa-solid fa-plus"></i> 追加
+                                </button>
+                                <button onclick="requestDeletePattern()" class="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold rounded flex items-center gap-1">
+                                    <i class="fa-solid fa-trash-can"></i> 削除
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 編集フォーム -->
+                    <div class="space-y-3 text-xs">
+                        <div>
+                            <label class="block font-bold text-gray-700 mb-1">番号（例: 第一番）</label>
+                            <input type="text" id="editNumber" class="w-full p-2 border border-amber-300 rounded focus:ring-1 focus:ring-red-400 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-gray-700 mb-1">和言・歌（詩）</label>
+                            <input type="text" id="editPoem" class="w-full p-2 border border-amber-300 rounded focus:ring-1 focus:ring-red-400 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-gray-700 mb-1">願望・恋愛</label>
+                            <textarea id="editLove" rows="2" class="w-full p-2 border border-amber-300 rounded focus:ring-1 focus:ring-red-400 focus:outline-none"></textarea>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-gray-700 mb-1">仕事・学業</label>
+                            <textarea id="editWork" rows="2" class="w-full p-2 border border-amber-300 rounded focus:ring-1 focus:ring-red-400 focus:outline-none"></textarea>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-gray-700 mb-1">金運</label>
+                            <textarea id="editMoney" rows="2" class="w-full p-2 border border-amber-300 rounded focus:ring-1 focus:ring-red-400 focus:outline-none"></textarea>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-gray-700 mb-1">健康</label>
+                            <textarea id="editHealth" rows="2" class="w-full p-2 border border-amber-300 rounded focus:ring-1 focus:ring-red-400 focus:outline-none"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- フッター操作ボタン -->
+                <div class="mt-4 pt-3 border-t flex justify-end gap-2">
+                    <button onclick="toggleProbabilityModal()" class="px-5 py-2 bg-vermilion hover:bg-red-700 text-white font-bold rounded-lg text-xs shadow">
+                        設定を完了して閉じる
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- モーダル: 過去の履歴一覧 -->
         <div id="historyModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div class="bg-white rounded-2xl w-full max-w-lg p-6 shadow-2xl relative max-h-[80vh] flex flex-col font-sans-jp">
+            <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl relative flex flex-col font-sans-jp max-h-[80vh]">
                 <button onclick="closeHistory()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
-                <h3 class="text-xl font-bold text-amber-950 mb-4 flex items-center gap-2">
-                    <i class="fa-solid fa-clock-rotate-left text-vermilion"></i> おみくじ過去の履歴
+                <h3 class="text-lg font-bold text-amber-950 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-vermilion"></i> 参拝・運勢履歴
                 </h3>
-                <div id="historyList" class="flex-1 overflow-y-auto space-y-3 pr-2">
-                    <!-- 履歴アイテムがJSで挿入される -->
+                <div id="historyList" class="flex-1 overflow-y-auto space-y-2 pr-1 my-2">
+                    <!-- JSで履歴リストを生成 -->
                 </div>
-                <div class="mt-4 pt-3 border-t flex justify-between items-center">
-                    <button onclick="clearHistory()" class="text-xs text-red-500 hover:underline">
-                        履歴をすべて削除
+                <div class="pt-3 border-t flex justify-between items-center">
+                    <button onclick="requestClearHistory()" class="text-xs text-red-600 hover:underline font-bold">
+                        <i class="fa-solid fa-trash-can mr-1"></i> 履歴を消去
                     </button>
-                    <button onclick="closeHistory()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-lg text-xs">
+                    <button onclick="closeHistory()" class="px-4 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-lg text-xs">
                         閉じる
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 汎用確認ダイアログモーダル (confirmの代替) -->
+        <div id="confirmModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl text-center font-sans-jp border border-amber-200">
+                <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <h4 id="confirmTitle" class="text-base font-bold text-gray-800 mb-2">確認</h4>
+                <p id="confirmMessage" class="text-xs text-gray-600 mb-6 leading-relaxed">本当に実行しますか？</p>
+                <div class="flex gap-3 justify-center">
+                    <button onclick="closeConfirmModal(false)" class="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg text-xs transition">
+                        キャンセル
+                    </button>
+                    <button id="confirmExecuteBtn" onclick="closeConfirmModal(true)" class="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-xs transition shadow">
+                        実行する
                     </button>
                 </div>
             </div>
@@ -330,73 +455,407 @@
 
     <!-- JavaScript ロジック -->
     <script>
-        // サウンド管理
+        // --- Web Audio APIの初期化 ---
+        let audioCtx = null;
         let soundEnabled = true;
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-        // 運勢データベース
-        const fortunes = [
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    audioCtx = new AudioContext();
+                }
+            }
+        }
+
+        // 画面上の最初のクリック/タップでオーディオコンテキストを初期化
+        window.addEventListener('click', initAudio, { once: true });
+        window.addEventListener('touchstart', initAudio, { once: true });
+
+        // --- おみくじのデフォルト文面構造（全60番：各運勢10パターン） ---
+        const defaultFortunes = [
             {
                 type: "大吉",
-                poem: "「雲の上の 澄み渡る空 眺むれば 心晴れやかに 望み叶わん」",
-                love: "素晴らしい良縁に恵まれます。意中の人へ素直な想いを伝えましょう。",
-                work: "これまでの努力が大いに花開く年。主導権を持って行動して大成功。",
-                money: "金運最高潮。予想外の収入や思いがけない恩恵に授かるでしょう。",
-                health: "気力・体力ともに充実。新しいスポーツや健康法を始めるとさらに吉。",
-                spring: "好機到来", summer: "大飛躍", autumn: "実りの成果", winter: "飛躍の準備",
-                bgHex: "#c83737"
+                bgHex: "#c83737",
+                patterns: [
+                    { number: "第一番", poem: "「雲の上の 澄み渡る空 眺むれば 心晴れやかに 望み叶わん」", love: "誠実な態度が最高の良縁を引き寄せます。素直な想いを伝えましょう。", work: "これまでの努力が大きく報われます。自信を持って飛翔する時です。", money: "思いがけない好機に恵まれます。堅実な管理でさらに開運。", health: "気力・体力ともに充実。積極的な活動が吉を生みます。", spring: "飛翔の芽生え", summer: "情熱が実を結ぶ", autumn: "大いなる実り", winter: "静かなる充実" },
+                    { number: "第二番", poem: "「朝日さす 輝く峰を 仰ぎ見て 歩む道には 光あふれん」", love: "理想の相手との出逢いや絆の深まりが期待できます。", work: "新しいプロジェクトや挑戦が大成功を収める兆しです。", money: "金運は非常に好調。未来への投資が吉と出ます。", health: "万全の体調。心身ともにエネルギッシュに過ごせます。", spring: "新たな始まり", summer: "絶好調の波", autumn: "充実の収穫", winter: "次なる飛躍準備" },
+                    { number: "第三番", poem: "「満ち渡る 天の恵みの 風受けて 輝く未来へ 船出せし時」", love: "互いの想いが深く通じ合い、大きな実りを結ぶでしょう。", work: "リーダーシップを発揮し成果を上げる時。周囲を惹きつけます。", money: "豊かな実りの時。感謝の気持ちで還元することが吉。", health: "活力がみなぎり、何事も精力的に取り組める良き時期。", spring: "快調な発進", summer: "大いなる飛躍", autumn: "豊穣の喜び", winter: "温かな安らぎ" },
+                    { number: "第四番", poem: "「千代の松 翠の色も 鮮やかに 変わらぬ栄えの 光射し込む」", love: "末永く続く素晴らしい縁に恵まれます。安心できる関係へ。", work: "盤石の基盤が整う時。長年の夢が現実のものとなります。", money: "蓄えが大きく増える兆し。堅実な一歩が大きな富に。", health: "病知らずの健やかさ。健やかな日常を満喫できます。", spring: "芽吹きと希望", summer: "揺るぎなき成長", autumn: "極上の収穫", winter: "強固な蓄え" },
+                    { number: "第五番", poem: "「春風に 舞うや花弁の 美しく 望みのままに 咲き誇るかな」", love: "あなたの魅力が最高に輝き、多くの愛を集める季節です。", work: "才能が花開き評価が高まります。アイデアが次々湧く時。", money: "金脈を引き寄せる好機。自分の投資が実を結びます。", health: "美と健康のバランスが最高潮。爽やかに過ごせます。", spring: "満開の喜び", summer: "栄光の輝き", autumn: "深まる充実", winter: "穏やかな充電" },
+                    { number: "第六番", poem: "「あたらしき 扉を開く 勇気持ち 歩む一歩に 奇跡宿らん」", love: "思い切ったアプローチが良い運気を引き寄せます。", work: "新境地の開拓に大成功。新たな道が大きく広がります。", money: "新しい収入のチャンスが巡ってきます。果敢に掴んで。", health: "全身にエネルギーが満ち、軽快に動ける好条件です。", spring: "果敢な挑戦", summer: "最高の躍進", autumn: "豊かな実り", winter: "新たなる意欲" },
+                    { number: "第七番", poem: "「天の川 輝く星の 導きに 迷わず進め 望む目的地へ」", love: "運命を感じる出会いがあります。直感を信じて進みましょう。", work: "目標に一直線に進むことで最高の成果が得られます。", money: "計画以上の実りあり。自己投資が良いリターンを生みます。", health: "心身の調和が取れ、常にリフレッシュした状態でいられます。", spring: "希望の光", summer: "突き進む情熱", autumn: "目標達成", winter: "栄誉の安息" },
+                    { number: "第八番", poem: "「恵みの雨 潤す野原に 咲く花は 豊かな実りを 約束するかな」", love: "あたたかな愛に包まれます。素直な心が最高の鍵。", work: "周囲のサポートにも恵まれ、最高の結果を残せます。", money: "臨時収入の予感。感謝を忘れないことで更に開運。", health: "疲れも心地よく、健康的なライフスタイルを維持できます。", spring: "恵みの恵風", summer: "順調なる実り", autumn: "大いなる成果", winter: "満たされる心" },
+                    { number: "第九番", poem: "「黄金成す 稲穂そよぐや 秋の日に たゆまぬ努力 実を結びけり」", love: "積み重ねてきた想いが実り、最高の結末を迎えます。", work: "これまでの実績が認められ、大きな昇進や評価を獲得。", money: "財運隆盛。豊かな実りを十分に享受できるでしょう。", health: "心身ともに健康そのもの。素晴らしいパフォーマンス発揮。", spring: "たゆまぬ歩み", summer: "たゆまぬ努力", autumn: "黄金の収穫", winter: "安定の喜び" },
+                    { number: "第十番", poem: "「富士の嶺の 高きに昇り 見渡せば 天下晴れて 祝歌響く」", love: "誰もが祝福する最高の良縁。至福の時間を過ごせます。", work: "業界やチームで最高の評価を得る頂点の運気です。", money: "豊かな富に恵まれ、将来への安心感が強まります。", health: "活力に溢れ、どのような壁も乗り越えられる好調さ。", spring: "最高の幕開け", summer: "頂点への到達", autumn: "栄光の讃歌", winter: "盤石の安泰" }
+                ]
             },
             {
                 type: "中吉",
-                poem: "「風立ちて 芽吹く若草 伸びゆけば 恵みの雨に 感謝重ねん」",
-                love: "落ち着いた温かい関係が築けます。お互いを思いやる心が鍵。",
-                work: "順調にステップアップできる時。周囲との連携を大切にすることで吉。",
-                money: "計画的な運用で着実に資産が増えます。自己投資にも最適。",
-                health: "良好。無理をしすぎず、十分な睡眠と休養を心がけましょう。",
-                spring: "順調なスタート", summer: "成長のとき", autumn: "穏やかな収穫", winter: "次への備え",
-                bgHex: "#d4af37"
+                bgHex: "#d97706",
+                patterns: [
+                    { number: "第十一番", poem: "「波静か 舟進むごと 穏やかに 望む港へ 辿り着くべし」", love: "焦らず自然体でいることが開運の鍵。思いやりを大切に。", work: "着実な仕事ぶりが周囲に評価されます。仲間との協調が吉。", money: "計画通りの蓄えができます。無駄遣いを控えれば安泰です。", health: "概ね良好。適度な休息を挟むことで好調を維持できます。", spring: "順調な船出", summer: "着実な成長", autumn: "実りの成果", winter: "穏やかな安らぎ" },
+                    { number: "第十二番", poem: "「山あいの 小川の流れ 清らかに たゆまず流れて 大河とならん」", love: "時間をかけて絆を育む時。じっくり向き合いましょう。", work: "コツコツ積み重ねた成果が少しずつ形になって現れます。", money: "堅実な管理で少しずつ財を伸ばせます。無理は禁物。", health: "規則正しい生活を心がければ、すこやかに過ごせます。", spring: "流れる小川", summer: "力を蓄える", autumn: "形になる成果", winter: "確かな自信" },
+                    { number: "第十三番", poem: "「木漏れ日の 暖かな道 歩みゆけば 心優しき 友に出逢わん」", love: "温かな交流から素敵な縁が広がる予感。友人を大切に。", work: "チームワークが成功の鍵。周囲と相談しながら進めて。", money: "人付き合いでの支出は吉。良き人間関係が返ってきます。", health: "良好。散歩や軽い運動でリフレッシュを深めましょう。", spring: "あたたかな風", summer: "賑やかな交流", autumn: "実りの絆", winter: "心温まる時間" },
+                    { number: "第十四番", poem: "「雲間にさす ひとすじの光 温かく 希望の芽生え 育む季節」", love: "少しずつ打ち解けていける時。焦らず一歩ずつ進んで。", work: "困難が解決に向かいます。前向きなビジョンを持とう。", money: "金運は持ち直し傾向。無駄な買い物を減らせば吉。", health: "調子は上向き。前向きな心が健康の源となります。", spring: "希望の芽生え", summer: "前進の勢い", autumn: "安心の成果", winter: "次への活力" },
+                    { number: "第十五番", poem: "「秋の月に 照らされし道 迷いなく 確かな歩み 重ねていかん」", love: "誠意を持った対応が信頼を生みます。素直な姿勢で。", work: "冷静な判断が吉と出る時。分析や準備を怠りなく。", money: "計画的な支出を意識すれば、安心した生活を送れます。", health: "精神的に安定。質の良い睡眠をしっかりと取って。", spring: "静かな覚悟", summer: "確かな準備", autumn: "冴え渡る月", winter: "穏やかな整理" },
+                    { number: "第十六番", poem: "「若竹の 伸びゆくように 健やかに 日々の努力が 身を結ぶとき」", love: "柔軟な姿勢が好印象を与えます。相手を思いやりましょう。", work: "成長を実感できる時期。新しい知識を吸収して。", money: "将来のための学びやスキルアップへの投資は幸運を呼びます。", health: "柔軟体操やヨガなどで身体をほぐすと運気アップ。", spring: "しなやかな伸び", summer: "グングン成長", autumn: "着実な結実", winter: "根を深める" },
+                    { number: "第十七番", poem: "「風立ちぬ 帆を揚げて進む 船のように 機会を逃さず 突き進むべし」", love: "良いチャンスが訪れます。素早く行動を起こしましょう。", work: "タイミングが命。好機には迷わず積極的に動くこと。", money: "チャンスを活かした運用が成功します。情報収集を。", health: "活発に活動して吉。ただし運動前の準備運動は忘れずに。", spring: "風を掴む", summer: "勢いに乗る", autumn: "満足の到着", winter: "航海を振り返る" },
+                    { number: "第十八番", poem: "「静けさの なかに宿るや 力強さ 焦らず進め 勝利の道へ」", love: "お互いの自由を尊重することで絆がより深まります。", work: "集中力が高まる時。自分の課題に静かに注力して。", money: "無駄遣いが減り、貯蓄がスムーズに進む良き時期です。", health: "心身のバランスが良い状態。瞑想なども効果的です。", spring: "静かな決意", summer: "ブレない軸", autumn: "確実な勝利", winter: "静寂の充実" },
+                    { number: "第十九番", poem: "「花咲くや 庭の片隅 密やかに されど気高く 誇り高く咲く」", love: "自分らしさを大切にすることで魅力が正しく伝わります。", work: "裏方の努力が評価される時。丁寧な仕事を心がけて。", money: "予想通りの安定した収支。余剰分は貯蓄に回して。", health: "大きな崩れなし。自然と触れ合うことでさらに快調に。", spring: "密やかな開花", summer: "誠実な歩み", autumn: "静かな称賛", winter: "誇り高き蓄え" },
+                    { number: "第二十番", poem: "「遠き峰 見据えて一歩 踏み出せば 道は開けて 鳥も歌わん」", love: "目標とする未来を語り合うことで、絆が深まります。", work: "長期的視点が成功への鍵。焦らず一歩ずつステップアップ。", money: "中長期的な計画を立てるのに最適。先を見据えて。", health: "規則正しい習慣を長期間維持することで健康増進。", spring: "遠大なる一歩", summer: "高みを目指して", autumn: "見晴らしの良さ", winter: "次なる目標" }
+                ]
             },
             {
                 type: "小吉",
-                poem: "「焦らずに 一歩一歩を 踏みしめよ 小さな喜び やがて大きな福」",
-                love: "焦りは禁物。少しずつ距離を縮めることで良い関係が育ちます。",
-                work: "地道な作業に幸運のヒントあり。基礎固めに最適な一年です。",
-                money: "収支のバランスが安定。無駄遣いを控えれば蓄えができます。",
-                health: "大きなトラブルはありませんが、暴飲暴食には気をつけて。",
-                spring: "地道な準備", summer: "着実な前進", autumn: "小さな喜び", winter: "心の安定",
-                bgHex: "#2b8a3e"
+                bgHex: "#059669",
+                patterns: [
+                    { number: "第二十一番", poem: "「庭草の 小さき花も 咲き出でて 次の季節の 訪れを告ぐ」", love: "小さな配慮が相手の心を動かします。謙虚な態度で接しましょう。", work: "基本を丁寧にこなすことで評価が高まります。油断は禁物。", money: "出入りは小さく安定。小まめな節約が幸運を呼びます。", health: "大きな問題はありませんが暴飲暴食には注意しましょう。", spring: "小さな芽生え", summer: "地道な努力", autumn: "ささやかな実り", winter: "力を蓄える時" },
+                    { number: "第二十二番", poem: "「さざ波の 寄せる渚に 拾う貝 小さな喜び 重なる日々に」", love: "日常のささやかな幸せに感謝することが良縁に繋がります。", work: "小さな成功を積み重ねることが将来の大きな糧となります。", money: "少額の節約やポイント活用が思わぬ得に繋がります。", health: "こまめな水分補給と十分な睡眠で元気を保ちましょう。", spring: "小さな発見", summer: "積み重ねる喜び", autumn: "小さな結実", winter: "日常の安らぎ" },
+                    { number: "第二十三番", poem: "「木陰にて ひと休みする 旅人の 爽やかな風 胸に受けるかな」", love: "無理に追わず、お互いリラックスできる時間を大切に。", work: "根を詰めすぎず、適度な休憩を挟む方が効率アップ。", money: "身の丈に合った暮らしが一番。身近な楽しみを見つけて。", health: "疲れたら早めに休むこと。お風呂でしっかりリフレッシュ。", spring: "ホッと一息", summer: "清々しい木陰", autumn: "ささやかな休息", winter: "エネルギー充電" },
+                    { number: "第二十四番", poem: "「雨上がり 葉に残る露 光りて 慎ましやかに 輝く朝」", love: "さりげない言葉遣いや気配りが印象を良くします。", work: "見落としがちな細部に気を配ることで評価されます。", money: "大きな買い物は控えめにして、堅実を守るのが吉。", health: "スキンケアやボディケアなど、お手入れに力を入れて。", spring: "朝露の輝き", summer: "慎ましき歩み", autumn: "小粒の結実", winter: "静かな備え" },
+                    { number: "第二十五番", poem: "「夕暮れの 空に一つ 星光り 明日の晴朗 密かに告げる」", love: "焦らなくても大丈夫。時間が少しずつ解決してくれます。", work: "明日の準備をしっかり整えておくことでスムーズに進みます。", money: "無駄遣いは減りつつあります。この調子で堅実さを維持。", health: "夜更かしを避けて早寝早起きを意識すると良好です。", spring: "明日の兆し", summer: "静かな前進", autumn: "ほのかな光", winter: "穏やかな夜" },
+                    { number: "第二十六番", poem: "「小鳥らの さえずり聴こえ 朝明ける 笑顔で進め 穏やかな日々」", love: "笑顔と感謝の挨拶が素敵な出会いや会話を生みます。", work: "周囲への明るい対応が場の空気を和やかにします。", money: "家計簿をつけるなど小まめな管理が開運の鍵。", health: "朝の散歩やストレッチが身体をリフレッシュさせます。", spring: "小鳥の歌", summer: "爽やかな朝", autumn: "笑顔の収穫", winter: "あたたかな家" },
+                    { number: "第二十七番", poem: "「石畳 踏みしめ歩む ひと目ずつ 確実な道 踏みしめて行け」", love: "一つひとつの約束を守ることが絆を深めます。", work: "マニュアル通り、基本に忠実に進めるのが一番安全です。", money: "安全第一の資産運用や溜め込みが吉。冒険は避けましょう。", health: "足元のケガに注意。歩きやすい靴を選んで出かけましょう。", spring: "確実な一歩", summer: "着実な足取り", autumn: "小幅な前進", winter: "足元を固める" },
+                    { number: "第二十八番", poem: "「野の道に ほのかに漂う 花の香に 心和んで 歩み進まん」", love: "自然体で飾らないあなたに惹かれる人が現れます。", work: "ギスギスせず温厚なコミュニケーションを意識して。", money: "身の回りの整理整頓が無駄遣いを防ぐ第一歩。", health: "アロマや入浴剤など、香りを楽しんでリラックス。", spring: "ほのかな香り", summer: "和やかな心", autumn: "穏やかな日常", winter: "温もりの部屋" },
+                    { number: "第二十九番", poem: "「ささやかな 喜び集めて 紡ぎゆく 日々は豊かに 彩られん」", love: "当たり前の日々に感謝を表現することで良好な関係に。", work: "ルーティンワークを正確にこなすことで信用獲得。", money: "毎日の小さな積み重ねが、やがて大きな助けとなります。", health: "規則正しい食生活が健康のベースを支えてくれます。", spring: "日々の彩り", summer: "紡ぐ喜び", autumn: "小さな実り", winter: "心豊かな日々" },
+                    { number: "第三十番", poem: "「小川跳び 超えて進むや 軽やかに 小さき障害 恐れるなかれ」", love: "ちょっとした擦れ違いはすぐに解決。恐れずに話を。", work: "小さなトラブルは早期対処で難なくクリアできます。", money: "急な出費も小額で済みます。冷静に対処しましょう。", health: "フットワーク良く動ける状態。軽い運動が効果的。", spring: "軽快な跳躍", summer: "乗り越える力", autumn: "安心の日常", winter: "身軽な準備" }
+                ]
             },
             {
                 type: "吉",
-                poem: "「日々に感謝 誠の心 忘れねば 天の助けを受け 途はひらく」",
-                love: "自然体で接することで魅力が伝わります。友人からの紹介に良縁あり。",
-                work: "サポート役に回ることで信頼度急上昇。チームワークを重視して。",
-                money: "相応の収入が得られます。人のためにお金を使うと運気倍増。",
-                health: "適度な運動とバランスの取れた食生活で健康維持に期待。",
-                spring: "芽生えの時期", summer: "広がりを見せる", autumn: "成果の実感", winter: "安定の冬",
-                bgHex: "#1c7ed6"
+                bgHex: "#2563eb",
+                patterns: [
+                    { number: "第三十一番", poem: "「たゆまぬ歩み 重ねゆけば やがて道は 開けてゆかん」", love: "急がずじっくりと関係を深めていきましょう。", work: "継続は力なり。途中で投げ出さずに最後までやり遂げて。", money: "収支のバランスを意識すること。堅実第一です。", health: "生活リズムを整えることで体調が上向きます。", spring: "準備の時", summer: "着実な歩み", autumn: "ささやかな成果", winter: "メンテナンス" },
+                    { number: "第三十二番", poem: "「雲晴れて 陽の光さす 坂道は 未来へと続く 扉となりて」", love: "心を開くことで良い展開に恵まれます。素直になろう。", work: "諦めずに続ければ道が開けます。前を向いて進んで。", money: "じわじわと好転の兆し。焦らず管理を続けて。", health: "体調は安定傾向。日光を浴びて元気を補充しましょう。", spring: "雲間の光", summer: "坂道を登る", autumn: "開かれる扉", winter: "明るい見通し" },
+                    { number: "第三十三番", poem: "「古きを訪ね 新しきを知る 深き学びが 力となりて」", love: "相手の過去や大切にしているものを尊重すると吉。", work: "過去の事例や経験が大きな助けとなります。温故知新。", money: "知識や資格への投資が良い将来のリターンを生みます。", health: "昔からの健康法（和食やラジオ体操など）を見直して。", spring: "学びの芽生え", summer: "知識の吸収", autumn: "深まる理解", winter: "確かな知恵" },
+                    { number: "第三十四番", poem: "「風ゆれて 青葉輝く 季節には 爽やかな意思 宿る心地よ」", love: "爽やかな対応が好感を与えます。引きずらない爽やかさを。", work: "フレッシュな視点を取り入れると物事が円滑に進みます。", money: "散財に気をつければ、まずまずの安定を保てます。", health: "気分転換に屋外での活動やスポーツを楽しんで。", spring: "青葉の輝き", summer: "爽快な決断", autumn: "澄んだ空気", winter: "整う環境" },
+                    { number: "第三十五番", poem: "「遠き声 耳を澄ませば 導きの 言葉聴こえて 迷い去りゆく」", love: "アドバイスに耳を傾けることで、良き選択ができます。", work: "先輩や専門家の意見を素直に受け入れると吉。", money: "信頼できる情報を元に行動しましょう。怪しい話は不可。", health: "体の声に耳を澄まし、違和感があれば早めの休息を。", spring: "素直な傾聴", summer: "導きの言葉", autumn: "迷いの解消", winter: "静かな納得" },
+                    { number: "第三十六番", poem: "「雨ののち 虹の架橋の 美しく 堪えし苦労も 報われるかな」", love: "耐えてきた甲斐があり、関係が好転していきます。", work: "苦しかった局面を脱し、成果が表れ始めるでしょう。", money: "厳しかった状況が落ち着き、ゆとりが戻ってきます。", health: "不調が次第に回復へ向かいます。無理せず養生を。", spring: "耐えし日々", summer: "架かる架橋", autumn: "報われる心", winter: "晴れやかな笑顔" },
+                    { number: "第三十七番", poem: "「種まきて 水を注ぎて 待つ日々に 確かな芽生え 訪れるらん」", love: "焦って答えを求めず、じっくり時間をかけて育もう。", work: "準備段階を大切に。下ごしらえが後の成功を左右。", money: "貯金の種まきを始めるのに良い日。少額から継続を。", health: "栄養の偏りに注意し、体に良い食習慣を育てましょう。", spring: "種まく季節", summer: "育てる時間", autumn: "芽生える希望", winter: "静かな見守り" },
+                    { number: "第三十八番", poem: "「大海に 漕ぎ出す船の 雄正しく 港を出でて 航路定めん」", love: "決断を下すのに良い時期。自分の気持ちに嘘をつかないで。", work: "方向性を明確にして一歩踏み出しましょう。", money: "資金計画をしっかり立てて運用を始める好機。", health: "体質改善の取り組みをスタートするのに向いています。", spring: "勇気ある出港", summer: "確かな航路", autumn: "広がる視界", winter: "港での点検" },
+                    { number: "第三十九番", poem: "「山あいの 霧も晴れゆく 朝ぼらけ 澄み切る視界 目指して歩む」", love: "相手の本心が見えてきて安心できるようになります。", work: "混迷していた課題の解決策がはっきり見えてきます。", money: "収支の不明瞭な点をクリアにすることで無駄を削減。", health: "頭がすっきり冴え渡る時期。集中して取り組めます。", spring: "晴れゆく霧", summer: "澄む視界", autumn: "クリアな結果", winter: "静かな安心" },
+                    { number: "第四十番", poem: "「和を以て 貴しとなす 心かけ 互いを支え 進む道かな」", love: "思いやりと譲り合いの精神が円満な関係を築きます。", work: "チームの輪を大切にし、調和を心がければ円滑に進行。", money: "みんなで楽しむためのお金は良き運気を循環させます。", health: "心穏やかに過ごすことで自律神経が整います。", spring: "調和の心", summer: "互いの支え", autumn: "円満な結末", winter: "温かな絆" }
+                ]
             },
             {
                 type: "末吉",
-                poem: "「今はまだ 蕾なれども 冬越えて 花開く日を じっと待つべし」",
-                love: "相手のペースに合わせることが大切。焦らずじっくり関係を深めて。",
-                work: "後半に向けて運気が上昇。前半は学びと知識のインプットに専念。",
-                money: "節約を心がけると吉。大きな買い物は慎重に検討を。",
-                health: "疲れが溜まりやすい時期。お風呂にじっくり浸かってリフレッシュを。",
-                spring: "慎重に過ごす", summer: "光が見え始める", autumn: "徐々に上昇", winter: "大きな成果",
-                bgHex: "#e8590c"
+                bgHex: "#7c3aed",
+                patterns: [
+                    { number: "第四十一番", poem: "「雨上がり 虹かかる日を 待ちながら 耐えて芽を出す 冬の草木」", love: "相手のペースに合わせることが大切。焦りは失敗の元。", work: "焦らず足元を固める時期。充電期間と捉えましょう。", money: "予想外の出費があるかも。余裕を持った予算組みを。", health: "無理は禁物。睡眠時間をしっかり確保してください。", spring: "耐え忍ぶ芽", summer: "徐々に回復", autumn: "兆しが見える", winter: "静かな準備" },
+                    { number: "第四十二番", poem: "「夕凪の 静かな海に 佇みて 次の風待つ 舟の如くに」", love: "今は動かず静観するのが吉。相手の様子を見守ろう。", work: "強引に進めず、タイミングが整うのをじっくり待とう。", money: "大きな契約や買い物は先送りにするのが無難です。", health: "リラックスタイムを取り入れてストレスを溜めないで。", spring: "静かな見守り", summer: "風を待つ", autumn: "静観の時", winter: "準備の完了" },
+                    { number: "第四十三番", poem: "「落ち葉舞う 道を歩めば 足元に 忘れし宝 発見するかな」", love: "身近な人のありがたみに改めて気づかされる時です。", work: "見落としていた基本や過去のデータを再確認して。", money: "家の中を整理すると忘れていた現金や価値ある物が。", health: "足元のケガや冷えに気をつけましょう。温活が吉。", spring: "足元を見る", summer: "再確認の時", autumn: "忘れし宝", winter: "身近な温もり" },
+                    { number: "第四十四番", poem: "「薄氷を踏む 心持ちにて 慎重に 確かな足取り 重ねてゆかん」", love: "不用意な一言で不和が生じやすいので言動に注意。", work: "確認作業をダブルで行うなど慎重なチェックを。", money: "上手い儲け話には裏があります。騙されないよう注意。", health: "転倒や事故に注意。急がず余裕を持って移動を。", spring: "慎重な足取り", summer: "油断なき対応", autumn: "無事の経過", winter: "難を逃れる" },
+                    { number: "第四十五番", poem: "「迷い路に 立ち止まりても 焦るなよ やがて道標 見えてくるらん」", love: "自分の気持ちを整理する時間を持ちましょう。", work: "迷ったときは一度立ち止まり、計画を見直して。", money: "収支の見直しを行い、節約ポイントを探しましょう。", health: "精神的な焦りが疲れを生みます。深呼吸を忘れずに。", spring: "立ち止まる", summer: "見つめ直し", autumn: "見えてくる標", winter: "落ち着く心" },
+                    { number: "第四十六番", poem: "「寒風に 耐えて根を張る 冬の木々 やがて春来て 花咲かせるや」", love: "今は我慢の時。誠意を示し続ければ報われます。", work: "評価されにくくとも地道な継続が将来の力に。", money: "今は蓄えを減らさないことが第一。倹約に励んで。", health: "寒さ対策をしっかりと。免疫力を下げない暮らしを。", spring: "根を張る冬", summer: "耐え抜く力", autumn: "春の予感", winter: "充電の完了" },
+                    { number: "第四十七番", poem: "「小石跳ね 躓きそうに なるとも 態勢整え 再び歩む」", love: "小さなケンカは早めに謝って長引かせないこと。", work: "ミスをしたら素直に認めて即座にリカバーしましょう。", money: "出費の誤算があっても慌てず冷静に調整して。", health: "体調の異変を感じたらすぐ休む初期対応が大切。", spring: "体制の立て直し", summer: "柔軟な修正", autumn: "持ち直し", winter: "安定への道" },
+                    { number: "第四十八番", poem: "「遠回りの 道に見えても 景色愛で 心豊かに 歩むもまた良し」", love: "急ぎすぎず、過程そのものを楽しむ心の余裕を。", work: "迂回策の方が結果的に安全で確実な場合があります。", money: "安物買いの銭失いに注意。質を重視する目が吉。", health: "散歩がてら遠回りして運動量を増やすと健康的。", spring: "遠回りの旅", summer: "景色を楽しむ", autumn: "豊かな時間", winter: "ゆとりの心" },
+                    { number: "第四十九番", poem: "「日陰にも やがて光の さし込みて 温もり宿る 時を待つべし」", love: "今はツキが薄く感じても、じきに風向きが変わります。", work: "表舞台に立てなくとも焦らずスキルを磨いておこう。", money: "カツカツの時期もやりくり工夫で乗り切れます。", health: "冷え対策を十分に行い、温かい食べ物を取ろう。", spring: "日陰の時間", summer: "光の予感", autumn: "温もりの訪れ", winter: "耐え抜く強さ" },
+                    { number: "第五十番", poem: "「残り物に 福ありと言う 昔言 謙虚な心が 運を呼ぶかな」", love: "譲り合いの気持ちを持つことで逆に愛されます。", work: "出しゃばらず、後方からのサポートに徹するのが吉。", money: "掘り出し物に出会える予感。じっくり探してみて。", health: "お腹の調子に気を配り、腹八分目を心がけて。", spring: "謙虚な姿勢", summer: "譲る心", autumn: "残り物の福", winter: "満たされる心" }
+                ]
             },
             {
                 type: "凶",
-                poem: "「荒波も 誠の心で 乗り越えん 災い転じて 福となす時」",
-                love: "勘違いや誤解に注意。言葉選びは慎重に、相手の意見を尊重して。",
-                work: "ミスを防ぐために二重チェックを。自己過信を捨て謙虚に過ごせば難を逃れます。",
-                money: "出費がかさみやすい年。財布の紐をしっかり締めて堅実に。",
-                health: "体調の変化に敏感になりましょう。違和感があれば早めの休息を。",
-                spring: "耐え忍ぶ時期", summer: "慎重に行動", autumn: "好転の兆し", winter: "福へ転換",
-                bgHex: "#495057"
+                bgHex: "#4b5563",
+                patterns: [
+                    { number: "第五十一番", poem: "「風強き 荒れ野の中に 立たされて 心乱さず 機を待つべし」", love: "誤解が生じやすい時期。自分の意見を押し付けないこと。", work: "慎重な行動が必要です。確認を怠らず自己過信を避けましょう。", money: "財布の紐を締めましょう。大きな買い物は時期を改めて。", health: "疲労が溜まりやすい時。無理せずしっかりと養生を。", spring: "慎重に過ごす", summer: "耐えの時期", autumn: "好転の兆し", winter: "春を待つ静寂" },
+                    { number: "第五十二番", poem: "「暗雲の 空を覆いて 見えねども 雲の向こうに 太陽あり」", love: "不安になりやすい時期。相手を疑わず信じる強さを。", work: "成果が出にくく焦りますが、投げ出さず耐えて。", money: "損失に注意。投資やギャンブルは絶対に避けて。", health: "気分が落ち込みがち。好きなことで気分転換を。", spring: "暗雲の空", summer: "耐え忍ぶ時", autumn: "雲間の太陽", winter: "光を信じる" },
+                    { number: "第五十三番", poem: "「急がば回れ 焦りの心は 災いの 元と知るべし 落ち着き持て」", love: "強引なアプローチは逆効果。一歩引いて様子を見よう。", work: "焦って仕上げると重大なミスにつながります。落ち着いて。", money: "うまい話に乗ると損をします。現状維持に専念。", health: "急な運動や怪我に注意。ゆったりと過ごして。", spring: "焦りの戒め", summer: "急がば回れ", autumn: "平穏の確保", winter: "平静の心" },
+                    { number: "第五十四番", poem: "「破れ傘 雨を避けかね 濡れるとも 宿借りて休む 知恵を持つべし」", love: "一人で悩まず信頼できる友人に相談してみよう。", work: "自力解決に固執せず、素直に助けを求めるのが吉。", money: "計画外の出費で苦しい時。節約術を工夫して。", health: "体調を崩したら我慢せず早めに病院を受診して。", spring: "雨に濡れる", summer: "助けを求める", autumn: "雨宿りの知恵", winter: "凌ぎきる力" },
+                    { number: "第五十五番", poem: "「鏡割れ 姿映さず 悩むより 新しき鏡 探す急務あり」", love: "過去の失敗を引きずらず、気持ちを切り替えよう。", work: "うまくいかない方法はすっぱり捨てて方針転換を。", money: "無駄な固定費を見直すチャンス。すっきり整理。", health: "悪習慣を断ち切る良い機会。生活改善をスタート。", spring: "切り替えの時", summer: "新しき模索", autumn: "方向転換", winter: "再生への準備" },
+                    { number: "第五十六番", poem: "「川の流 れに逆らい 泳ぐなよ 流れに身を任せ 岸を目指せ」", love: "意固地にならず、相手の意見を受け入れる柔軟性を。", work: "逆風の時は争わず、流れに乗ってやり過ごそう。", money: "無理な投資や買い増しは厳禁。守りを固めて。", health: "体に逆らわず、眠い時はしっかり眠りましょう。", spring: "流れに乗る", summer: "無理を避ける", autumn: "安全な岸へ", winter: "休養の徹底" },
+                    { number: "第五十七番", poem: "「高高き 枝の実狙い 転ぶなよ 足元の実を 拾うが賢し」", love: "高望みせず、身近な縁や愛を大切にすること。", work: "身の丈に合わない大きな案件より、目の前の業務を。", money: "一獲千金を狙うと大損の危険。コツコツが一番。", health: "無理なダイエットや激しい筋トレは体を痛めます。", spring: "高望みの戒め", summer: "足元を見る", autumn: "確実な拾得", winter: "身の丈を知る" },
+                    { number: "第五十八番", poem: "「枯れ葉舞う 木立の中に ひとり立ち 心静かに 寒さを耐えん」", love: "孤独を感じやすい時期。自分を慈しむ時間を大切に。", work: "周囲のサポートが得にくい時。地道を貫こう。", money: "厳制限度額を守り、無駄な支出を遮断して。", health: "身体の冷えが万病の元。しっかり温まりましょう。", spring: "孤高の耐え", summer: "静かな継続", autumn: "耐え抜く心", winter: "温もりの確保" },
+                    { number: "第五十九番", poem: "「道迷い 深き森へと 入り込んでも 焦らず来た道 引き返せ」", love: "違和感を覚えたら、元の立ち位置に戻って考え直して。", work: "間違えたと感じたら、最初の計画まで戻る勇気を。", money: "衝動買いしそうになったら一度店を出て冷静に。", health: "無理なスケジュールを見直し、休養を第一優先に。", spring: "迷い路", summer: "引き返す勇気", autumn: "原点回帰", winter: "安心の場所" },
+                    { number: "第六十番", poem: "「底につき これ以上落つ 道はなし 明日よりはただ 上がるのみかな」", love: "最悪の状況は脱しました。これからは好転していきます。", work: "底を打った運気。ここからの捲り返しに期待しましょう。", money: "底を打って回復へ。前向きな気持ちを持ち続けて。", health: "不調のピークは過ぎました。徐々に元気が戻ります。", spring: "底を打つ", summer: "好転の兆し", autumn: "上昇気流", winter: "希望の夜明け" }
+                ]
             }
         ];
+
+        // ローカルストレージからの読み込み、または初期値の適用
+        let fortunes = JSON.parse(localStorage.getItem("omikujiCustomFortunesMultiPattern")) || JSON.parse(JSON.stringify(defaultFortunes));
+
+        // 確認ダイアログ制御
+        let pendingConfirmAction = null;
+
+        function openConfirmModal(title, message, onConfirm) {
+            document.getElementById("confirmTitle").innerText = title;
+            document.getElementById("confirmMessage").innerText = message;
+            pendingConfirmAction = onConfirm;
+            document.getElementById("confirmModal").classList.remove("hidden");
+        }
+
+        function closeConfirmModal(isConfirmed) {
+            document.getElementById("confirmModal").classList.add("hidden");
+            if (isConfirmed && typeof pendingConfirmAction === 'function') {
+                pendingConfirmAction();
+            }
+            pendingConfirmAction = null;
+        }
+
+        // 新しいパターンを追加
+        function addNewPattern() {
+            saveCurrentEditingText();
+            const fIdx = document.getElementById("fortuneSelectEdit").value || 0;
+            const nextNum = fortunes[fIdx].patterns.length + 1;
+            const newPattern = {
+                number: `第${nextNum}番`,
+                poem: "「新たな誓い 心に抱いて 輝く明日へ 歩み出さん」",
+                love: "新しい運気の風が吹き込みます。自分らしさを大切に。",
+                work: "新しいアイデアが好評価を受けます。恐れずチャレンジを。",
+                money: "計画的な貯蓄と投資が吉と出ます。",
+                health: "心身ともにリフレッシュを心がけると順調です。",
+                spring: "新しい始まり", summer: "成長と躍進", autumn: "充実の時", winter: "次への備え"
+            };
+            fortunes[fIdx].patterns.push(newPattern);
+            localStorage.setItem("omikujiCustomFortunesMultiPattern", JSON.stringify(fortunes));
+            onFortuneSelectChange();
+            const pSelect = document.getElementById("patternSelectEdit");
+            pSelect.value = fortunes[fIdx].patterns.length - 1;
+            loadFortuneTextToForm();
+            showToast(`パターン${fortunes[fIdx].patterns.length}を追加しました`);
+        }
+
+        // 現在のパターンを削除リクエスト
+        function requestDeletePattern() {
+            const fIdx = document.getElementById("fortuneSelectEdit").value || 0;
+            const pIdx = document.getElementById("patternSelectEdit").value || 0;
+
+            if (fortunes[fIdx].patterns.length <= 1) {
+                showToast("最低1つのパターンが必要です");
+                return;
+            }
+
+            openConfirmModal(
+                "パターンの削除",
+                `パターン ${parseInt(pIdx) + 1} を削除してもよろしいですか？`,
+                () => executeDeletePattern(fIdx, pIdx)
+            );
+        }
+
+        // 実際の削除処理
+        function executeDeletePattern(fIdx, pIdx) {
+            fortunes[fIdx].patterns.splice(pIdx, 1);
+            localStorage.setItem("omikujiCustomFortunesMultiPattern", JSON.stringify(fortunes));
+            onFortuneSelectChange();
+            showToast("パターンを削除しました");
+        }
+
+        // 文言をデフォルトにリセット
+        function requestResetFortunesText() {
+            openConfirmModal(
+                "文面のリセット",
+                "すべての運勢のパターンと文面を初期状態に戻しますか？",
+                () => {
+                    fortunes = JSON.parse(JSON.stringify(defaultFortunes));
+                    localStorage.removeItem("omikujiCustomFortunesMultiPattern");
+                    onFortuneSelectChange();
+                    showToast("文言を初期状態にリセットしました");
+                }
+            );
+        }
+
+        // 運勢出現確率設定（デフォルト値 %）
+        let fortuneProbabilities = [
+            { type: "大吉", weight: 20 },
+            { type: "中吉", weight: 30 },
+            { type: "小吉", weight: 20 },
+            { type: "吉",   weight: 15 },
+            { type: "末吉", weight: 10 },
+            { type: "凶",   weight: 5  }
+        ];
+
+        // 確率・文言設定モーダルの開閉
+        function toggleProbabilityModal() {
+            const modal = document.getElementById("probabilityModal");
+            const isHidden = modal.classList.contains("hidden");
+            if (isHidden) {
+                renderProbabilitySliders();
+                initFortuneTextEditForm();
+                modal.classList.remove("hidden");
+            } else {
+                saveCurrentEditingText();
+                modal.classList.add("hidden");
+            }
+        }
+
+        // タブ切替機能
+        function switchConfigTab(tab) {
+            const probContent = document.getElementById("tabProbContent");
+            const textContent = document.getElementById("tabTextContent");
+            const probBtn = document.getElementById("tabProbBtn");
+            const textBtn = document.getElementById("tabTextBtn");
+
+            if (tab === 'prob') {
+                saveCurrentEditingText();
+                probContent.classList.remove("hidden");
+                textContent.classList.add("hidden");
+                probBtn.className = "text-base font-bold pb-2 border-b-2 border-vermilion text-vermilion transition";
+                textBtn.className = "text-base font-bold pb-2 border-b-2 border-transparent text-gray-500 hover:text-amber-900 transition";
+            } else {
+                probContent.classList.add("hidden");
+                textContent.classList.remove("hidden");
+                probBtn.className = "text-base font-bold pb-2 border-b-2 border-transparent text-gray-500 hover:text-amber-900 transition";
+                textBtn.className = "text-base font-bold pb-2 border-b-2 border-vermilion text-vermilion transition";
+            }
+        }
+
+        // 文面編集フォームの初期化
+        function initFortuneTextEditForm() {
+            const select = document.getElementById("fortuneSelectEdit");
+            select.innerHTML = "";
+            fortunes.forEach((f, i) => {
+                const opt = document.createElement("option");
+                opt.value = i;
+                opt.innerText = f.type;
+                select.appendChild(opt);
+            });
+            onFortuneSelectChange();
+        }
+
+        function onFortuneSelectChange() {
+            // 運勢変更時は直前の入力値による上書きを防ぐため、saveCurrentEditingText() は呼び出さない
+            const fIdx = document.getElementById("fortuneSelectEdit").value || 0;
+            const targetFortune = fortunes[fIdx];
+            const pSelect = document.getElementById("patternSelectEdit");
+            pSelect.innerHTML = "";
+
+            if (!targetFortune.patterns || targetFortune.patterns.length === 0) {
+                targetFortune.patterns = [{ number: "第一番", poem: "", love: "", work: "", money: "", health: "", spring: "順調", summer: "成長", autumn: "成果", winter: "備え" }];
+            }
+
+            targetFortune.patterns.forEach((p, pIdx) => {
+                const opt = document.createElement("option");
+                opt.value = pIdx;
+                // 番号プロパティが存在すれば優先して表示
+                const numLabel = p.number ? p.number : `パターン ${pIdx + 1}`;
+                opt.innerText = `${numLabel} (パターン ${pIdx + 1})`;
+                pSelect.appendChild(opt);
+            });
+            pSelect.value = 0;
+            loadFortuneTextToForm();
+        }
+
+        function onPatternSelectChange() {
+            saveCurrentEditingText();
+            loadFortuneTextToForm();
+        }
+
+        // フォームに指定の運勢・パターンのテキストを読み込む
+        function loadFortuneTextToForm() {
+            const fIdx = document.getElementById("fortuneSelectEdit").value || 0;
+            const pIdx = document.getElementById("patternSelectEdit").value || 0;
+            const targetPattern = fortunes[fIdx]?.patterns[pIdx] || {};
+            
+            document.getElementById("editNumber").value = targetPattern.number !== undefined ? targetPattern.number : `第${parseInt(pIdx) + 1}番`;
+            document.getElementById("editPoem").value = targetPattern.poem || "";
+            document.getElementById("editLove").value = targetPattern.love || "";
+            document.getElementById("editWork").value = targetPattern.work || "";
+            document.getElementById("editMoney").value = targetPattern.money || "";
+            document.getElementById("editHealth").value = targetPattern.health || "";
+        }
+
+        // フォームで入力したテキストをfortunes配列＆ローカルストレージに保存
+        function saveCurrentEditingText() {
+            const fSelect = document.getElementById("fortuneSelectEdit");
+            const pSelect = document.getElementById("patternSelectEdit");
+            if (!fSelect || fSelect.value === "" || !pSelect || pSelect.value === "") return;
+            
+            const fIdx = fSelect.value;
+            const pIdx = pSelect.value;
+            
+            if (!fortunes[fIdx] || !fortunes[fIdx].patterns[pIdx]) return;
+
+            const newNumber = document.getElementById("editNumber").value;
+            fortunes[fIdx].patterns[pIdx].number = newNumber;
+            fortunes[fIdx].patterns[pIdx].poem = document.getElementById("editPoem").value;
+            fortunes[fIdx].patterns[pIdx].love = document.getElementById("editLove").value;
+            fortunes[fIdx].patterns[pIdx].work = document.getElementById("editWork").value;
+            fortunes[fIdx].patterns[pIdx].money = document.getElementById("editMoney").value;
+            fortunes[fIdx].patterns[pIdx].health = document.getElementById("editHealth").value;
+
+            // ドロップダウンのラベル表記を即座に反映
+            if (pSelect.options[pIdx]) {
+                const numLabel = newNumber ? newNumber : `パターン ${parseInt(pIdx) + 1}`;
+                pSelect.options[pIdx].innerText = `${numLabel} (パターン ${parseInt(pIdx) + 1})`;
+            }
+
+            localStorage.setItem("omikujiCustomFortunesMultiPattern", JSON.stringify(fortunes));
+        }
+
+        // スライダー群のレンダリング
+        function renderProbabilitySliders() {
+            const container = document.getElementById("probabilityInputs");
+            container.innerHTML = "";
+
+            fortuneProbabilities.forEach((item, index) => {
+                const div = document.createElement("div");
+                div.className = "space-y-1 bg-amber-50/60 p-2.5 rounded-lg border border-amber-200/80";
+                div.innerHTML = `
+                    <div class="flex justify-between font-bold text-gray-700">
+                        <span>${item.type}</span>
+                        <span id="probVal_${index}" class="text-vermilion">${item.weight}%</span>
+                    </div>
+                    <input type="range" min="0" max="100" step="1" value="${item.weight}" 
+                           oninput="updateProbability(${index}, this.value)" 
+                           class="w-full accent-red-600 cursor-pointer h-1.5 bg-amber-200 rounded-lg">
+                `;
+                container.appendChild(div);
+            });
+            updateTotalPercentDisplay();
+        }
+
+        // スライダー移動時の値更新
+        function updateProbability(index, value) {
+            fortuneProbabilities[index].weight = parseInt(value, 10) || 0;
+            document.getElementById(`probVal_${index}`).innerText = `${fortuneProbabilities[index].weight}%`;
+            updateTotalPercentDisplay();
+        }
+
+        // 合計パーセントの計算表示
+        function updateTotalPercentDisplay() {
+            const total = fortuneProbabilities.reduce((sum, item) => sum + item.weight, 0);
+            const display = document.getElementById("totalPercentDisplay");
+            display.innerText = `${total}%`;
+            if (total === 100) {
+                display.className = "font-extrabold text-sm text-emerald-600";
+            } else {
+                display.className = "font-extrabold text-sm text-red-600";
+            }
+        }
+
+        // プリセット設定
+        function setPreset(presetType) {
+            if (presetType === 'default') {
+                fortuneProbabilities = [
+                    { type: "大吉", weight: 20 },
+                    { type: "中吉", weight: 30 },
+                    { type: "小吉", weight: 20 },
+                    { type: "吉",   weight: 15 },
+                    { type: "末吉", weight: 10 },
+                    { type: "凶",   weight: 5  }
+                ];
+            } else if (presetType === 'lucky') {
+                fortuneProbabilities = [
+                    { type: "大吉", weight: 100 },
+                    { type: "中吉", weight: 0 },
+                    { type: "小吉", weight: 0 },
+                    { type: "吉",   weight: 0 },
+                    { type: "末吉", weight: 0 },
+                    { type: "凶",   weight: 0 }
+                ];
+            } else if (presetType === 'hard') {
+                fortuneProbabilities = [
+                    { type: "大吉", weight: 2 },
+                    { type: "中吉", weight: 8 },
+                    { type: "小吉", weight: 10 },
+                    { type: "吉",   weight: 20 },
+                    { type: "末吉", weight: 30 },
+                    { type: "凶",   weight: 30 }
+                ];
+            }
+            renderProbabilitySliders();
+        }
 
         const luckyColors = ["朱色", "黄金色", "深緑", "瑠璃色", "桜色", "紫紺", "白銀", "琥珀色"];
         const luckyItems = ["和紙の手帳", "お守りストラップ", "天然石のアクセサリー", "木製の櫛", "温かいお茶", "伝統工芸品", "水引飾り", "朱肉とハンコ"];
@@ -414,7 +873,6 @@
                 gain.connect(audioCtx.destination);
 
                 if (type === 'shake') {
-                    // ガラガラ音（低音の短いパルス）
                     osc.type = 'triangle';
                     osc.frequency.setValueAtTime(120, audioCtx.currentTime);
                     osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.1);
@@ -423,7 +881,6 @@
                     osc.start();
                     osc.stop(audioCtx.currentTime + 0.1);
                 } else if (type === 'pop') {
-                    // ポンっ（棒が出る音）
                     osc.type = 'sine';
                     osc.frequency.setValueAtTime(300, audioCtx.currentTime);
                     osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.2);
@@ -432,9 +889,8 @@
                     osc.start();
                     osc.stop(audioCtx.currentTime + 0.2);
                 } else if (type === 'fanfare') {
-                    // 雅な和風ファンファーレ
                     const now = audioCtx.currentTime;
-                    const notes = [523.25, 659.25, 783.99, 1046.50]; // C, E, G, C
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
                     notes.forEach((freq, idx) => {
                         const o = audioCtx.createOscillator();
                         const g = audioCtx.createGain();
@@ -466,10 +922,38 @@
         }
 
         let isDrawing = false;
+        let selectedFortuneResult = null;
 
         function startDraw() {
             if (isDrawing) return;
             isDrawing = true;
+
+            // あらかじめ運勢とパターンを確定
+            const totalWeight = fortuneProbabilities.reduce((sum, item) => sum + item.weight, 0);
+            let fortuneIndex = 0;
+
+            if (totalWeight > 0) {
+                let rand = Math.random() * totalWeight;
+                for (let i = 0; i < fortuneProbabilities.length; i++) {
+                    if (rand < fortuneProbabilities[i].weight) {
+                        fortuneIndex = i;
+                        break;
+                    }
+                    rand -= fortuneProbabilities[i].weight;
+                }
+            } else {
+                fortuneIndex = Math.floor(Math.random() * fortunes.length);
+            }
+
+            const selectedFortuneGroup = fortunes[fortuneIndex];
+            const patternList = selectedFortuneGroup.patterns || [];
+            const selectedPattern = patternList[Math.floor(Math.random() * patternList.length)] || {};
+
+            selectedFortuneResult = {
+                fortuneIndex,
+                group: selectedFortuneGroup,
+                pattern: selectedPattern
+            };
 
             const cylinder = document.getElementById("omikujiCylinder");
             const stick = document.getElementById("omikujiStick");
@@ -478,15 +962,12 @@
             drawBtn.disabled = true;
             drawBtn.classList.add("opacity-50");
 
-            // 音声コンテキストの初期化（ブラウザ制限対策）
             if (audioCtx && audioCtx.state === 'suspended') {
                 audioCtx.resume();
             }
 
-            // 振るアニメーション開始
             cylinder.classList.add("animate-shake");
 
-            // ガラガラ効果音再生ループ
             let shakeCount = 0;
             const shakeInterval = setInterval(() => {
                 playSound('shake');
@@ -496,19 +977,17 @@
                 }
             }, 120);
 
-            // 1.5秒後に振るのを止め、棒を飛び出させる
             setTimeout(() => {
                 cylinder.classList.remove("animate-shake");
                 playSound('pop');
 
-                // ランダムな棒の番号
-                const randomNum = Math.floor(Math.random() * 50) + 1;
-                document.getElementById("stickNumber").innerText = `第${randomNum}番`;
+                // 出てくる棒に事前選出された番号を表示
+                const stickNum = selectedPattern.number || "第一番";
+                document.getElementById("stickNumber").innerText = stickNum;
 
                 stick.classList.remove("hidden");
                 stick.classList.add("animate-stick");
 
-                // 1秒後に結果を表示
                 setTimeout(() => {
                     displayResult();
                     stick.classList.add("hidden");
@@ -524,63 +1003,51 @@
         let currentResultData = null;
 
         function displayResult() {
-            // 選択された年と名前を取得
+            if (!selectedFortuneResult) return;
+
+            const { fortuneIndex, group: selectedFortuneGroup, pattern: selectedPattern } = selectedFortuneResult;
+
             const yearInput = document.getElementById("targetYear").value || new Date().getFullYear();
             const nameInput = document.getElementById("userName").value.trim();
             const displayName = nameInput ? `${nameInput} 様の` : "";
-
-            // ランダムなおみくじ結果の選定（確率調整：大吉20%, 中吉30%, 小吉20%, 吉15%, 末吉10%, 凶5%）
-            const rand = Math.random() * 100;
-            let fortuneIndex = 0;
-            if (rand < 20) fortuneIndex = 0;      // 大吉
-            else if (rand < 50) fortuneIndex = 1; // 中吉
-            else if (rand < 70) fortuneIndex = 2; // 小吉
-            else if (rand < 85) fortuneIndex = 3; // 吉
-            else if (rand < 95) fortuneIndex = 4; // 末吉
-            else fortuneIndex = 5;               // 凶
-
-            const selectedFortune = fortunes[fortuneIndex];
 
             const randomColor = luckyColors[Math.floor(Math.random() * luckyColors.length)];
             const randomItem = luckyItems[Math.floor(Math.random() * luckyItems.length)];
             const randomDirection = directions[Math.floor(Math.random() * directions.length)];
 
-            // 日付設定
             const now = new Date();
             const dateStr = `${yearInput}年${now.getMonth() + 1}月${now.getDate()}日 参拝`;
 
-            // UI反映
             document.getElementById("resultDate").innerText = dateStr;
             document.getElementById("resultName").innerText = displayName;
             document.getElementById("resultYearTitle").innerText = `${yearInput}年 `;
-            
-            const badge = document.getElementById("fortuneBadge");
-            badge.innerText = selectedFortune.type;
-            badge.style.color = selectedFortune.bgHex;
-            badge.style.borderColor = selectedFortune.bgHex;
+            document.getElementById("resultStickNumber").innerText = selectedPattern.number || "第一番";
 
-            document.getElementById("fortunePoem").innerText = selectedFortune.poem;
-            document.getElementById("itemLove").innerText = selectedFortune.love;
-            document.getElementById("itemWork").innerText = selectedFortune.work;
-            document.getElementById("itemMoney").innerText = selectedFortune.money;
-            document.getElementById("itemHealth").innerText = selectedFortune.health;
+            const badge = document.getElementById("fortuneBadge");
+            badge.innerText = selectedFortuneGroup.type;
+            badge.style.color = selectedFortuneGroup.bgHex;
+            badge.style.borderColor = selectedFortuneGroup.bgHex;
+
+            document.getElementById("fortunePoem").innerText = selectedPattern.poem || "";
+            document.getElementById("itemLove").innerText = selectedPattern.love || "";
+            document.getElementById("itemWork").innerText = selectedPattern.work || "";
+            document.getElementById("itemMoney").innerText = selectedPattern.money || "";
+            document.getElementById("itemHealth").innerText = selectedPattern.health || "";
 
             document.getElementById("luckyColor").innerText = randomColor;
             document.getElementById("luckyItem").innerText = randomItem;
             document.getElementById("luckyDirection").innerText = randomDirection;
 
-            document.getElementById("seasonSpring").innerText = selectedFortune.spring;
-            document.getElementById("seasonSummer").innerText = selectedFortune.summer;
-            document.getElementById("seasonAutumn").innerText = selectedFortune.autumn;
-            document.getElementById("seasonWinter").innerText = selectedFortune.winter;
+            document.getElementById("seasonSpring").innerText = selectedPattern.spring || "順調";
+            document.getElementById("seasonSummer").innerText = selectedPattern.summer || "成長";
+            document.getElementById("seasonAutumn").innerText = selectedPattern.autumn || "成果";
+            document.getElementById("seasonWinter").innerText = selectedPattern.winter || "備え";
 
-            // 画面切り替え
             document.getElementById("drawScreen").classList.add("hidden");
             document.getElementById("resultScreen").classList.remove("hidden");
 
-            // 音声＆Confetti演出
             playSound('fanfare');
-            if (fortuneIndex <= 1) { // 大吉・中吉なら豪華紙吹雪
+            if (fortuneIndex <= 1) {
                 confetti({
                     particleCount: 100,
                     spread: 70,
@@ -589,13 +1056,13 @@
                 });
             }
 
-            // 履歴保存
             currentResultData = {
                 year: yearInput,
                 date: dateStr,
                 name: nameInput || "匿名",
-                type: selectedFortune.type,
-                poem: selectedFortune.poem
+                number: selectedPattern.number || "第一番",
+                type: selectedFortuneGroup.type,
+                poem: selectedPattern.poem
             };
             saveToHistory(currentResultData);
         }
@@ -608,7 +1075,7 @@
         function saveToHistory(result) {
             let history = JSON.parse(localStorage.getItem("omikujiHistory") || "[]");
             history.unshift(result);
-            if (history.length > 20) history.pop(); // 最大20件
+            if (history.length > 20) history.pop();
             localStorage.setItem("omikujiHistory", JSON.stringify(history));
         }
 
@@ -620,13 +1087,14 @@
             if (history.length === 0) {
                 listEl.innerHTML = `<p class="text-center text-gray-500 py-8 text-xs">まだおみくじの履歴がありません。</p>`;
             } else {
-                history.forEach((item, index) => {
+                history.forEach((item) => {
                     const div = document.createElement("div");
                     div.className = "bg-amber-50 p-3 rounded-lg border border-amber-200 flex justify-between items-center text-xs";
                     div.innerHTML = `
                         <div>
                             <span class="font-bold text-amber-950">${item.date}</span>
-                            <span class="text-gray-600 ml-2">(${item.name})</span>
+                            <span class="text-gray-600 ml-1">(${item.name})</span>
+                            <span class="ml-1 px-1.5 py-0.5 bg-amber-200 text-amber-900 rounded font-bold text-[10px]">${item.number || ''}</span>
                             <p class="text-gray-500 text-[10px] truncate max-w-[200px] mt-1">${item.poem}</p>
                         </div>
                         <span class="font-extrabold text-base px-3 py-1 rounded bg-white shadow-sm border ${item.type === '大吉' ? 'text-red-600 border-red-300' : 'text-amber-800 border-amber-300'}">
@@ -644,18 +1112,22 @@
             document.getElementById("historyModal").classList.add("hidden");
         }
 
-        function clearHistory() {
-            if (confirm("おみくじの履歴をすべて削除してもよろしいですか？")) {
-                localStorage.removeItem("omikujiHistory");
-                showHistory();
-                showToast("履歴を削除しました");
-            }
+        function requestClearHistory() {
+            openConfirmModal(
+                "履歴の削除",
+                "おみくじの履歴をすべて削除してもよろしいですか？",
+                () => {
+                    localStorage.removeItem("omikujiHistory");
+                    showHistory();
+                    showToast("履歴を削除しました");
+                }
+            );
         }
 
         function shareTwitter() {
             if (!currentResultData) return;
             const targetYear = currentResultData.year || new Date().getFullYear();
-            const text = `【${targetYear}年 運勢おみくじ】\n私の${targetYear}年の運勢は『${currentResultData.type}』でした！✨\n${currentResultData.poem}\n\n#一年おみくじ #開運 #おみくじ${targetYear}\n`;
+            const text = `【${targetYear}年 運勢おみくじ】\n私のおみくじは【${currentResultData.number} ${currentResultData.type}】でした！✨\n${currentResultData.poem}\n\n#一年おみくじ #開運 #おみくじ${targetYear}\n`;
             const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`;
             window.open(url, '_blank');
         }
@@ -702,14 +1174,12 @@
             }, 2500);
         }
 
-        // 年度の動的初期化とイベントリスナー設定
         window.addEventListener('DOMContentLoaded', () => {
             const currentYear = new Date().getFullYear();
             const targetYearInput = document.getElementById("targetYear");
             
             if (targetYearInput) {
                 targetYearInput.value = currentYear;
-                // 年数が入力・変更されたらリアルタイムでヘッダー表示を更新
                 targetYearInput.addEventListener("input", (e) => {
                     const val = e.target.value;
                     document.getElementById("yearDisplay").innerText = val ? `${val}年` : '';
